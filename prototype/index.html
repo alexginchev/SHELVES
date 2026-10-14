@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f0e6">
+  <title>Shelves — A little corner for book people</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Shelves home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 56 56" fill="none"><path d="M10 42C24 34 35 23 42 8M17 37C12 28 14 20 22 17C25 26 23 32 17 37ZM28 27C26 16 32 10 43 10C42 21 37 27 28 27ZM24 34C32 35 39 40 40 48C30 47 25 42 24 34Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span><strong>shelves</strong><small>THE BOOKISH SOCIAL CLUB</small></span>
+      </a>
+      <div class="sidebar-label">YOUR CORNER</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="home"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span> Home <span class="nav-count">3</span></button>
+        <button class="nav-item" data-view="discover"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></span> Discover</button>
+        <button class="nav-item" data-view="shelves"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3.5h12a2 2 0 0 1 2 2V21H7a2 2 0 0 1-2-2z"/><path d="M5 18.5A2.5 2.5 0 0 1 7.5 16H19M9 7h6M9 10h6"/></svg></span> My shelves</button>
+        <button class="nav-item" data-view="clubs"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21V11M12 15C4 15 3 8 5 5c4 0 7 3 7 8M12 12c0-5 3-8 7-8 2 4 0 9-7 11"/></svg></span> Book clubs <span class="tiny-dot"></span></button>
+        <button class="nav-item" data-view="journal"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 16.5-.8 4.3 4.3-.8L20 7.5 16.5 4z"/><path d="m14.8 5.7 3.5 3.5M4 4h6"/></svg></span> Reading journal</button>
+      </nav>
+      <div class="sidebar-label shelf-label">YOUR SHELVES <button id="addShelf" class="plus-btn" aria-label="Add shelf">+</button></div>
+      <nav class="shelf-nav" aria-label="Book shelves">
+        <button class="shelf-link" data-shelf="Currently reading"><i class="shelf-dot sage"></i> Currently reading <span>3</span></button>
+        <button class="shelf-link" data-shelf="Want to read"><i class="shelf-dot coral"></i> Want to read <span>12</span></button>
+        <button class="shelf-link" data-shelf="Finished"><i class="shelf-dot blue"></i> Finished <span>28</span></button>
+      </nav>
+      <div class="sidebar-note">
+        <div class="note-sun">✳</div>
+        <p class="note-title">A slower kind<br>of social.</p>
+        <p class="note-copy">Less scrolling. More stories worth keeping.</p>
+        <span class="note-squiggle">〰 〰 〰</span>
+      </div>
+      <button class="profile-mini" data-view="profile">
+        <span class="avatar avatar-you">M</span><span class="profile-mini-text"><strong>Morgan Ellis</strong><small>@morgan.reads</small></span><span class="more">···</span>
+      </button>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark">❧</span> shelves</div>
+        <div class="breadcrumbs"><span id="eyebrow">TUESDAY, OCTOBER 13</span><h1 id="pageTitle">Your reading nook</h1></div>
+        <div class="top-actions">
+          <label class="search-box"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></span><input id="searchInput" type="search" placeholder="Find a book, reader..." aria-label="Search books and readers"><kbd>⌘ K</kbd></label>
+          <button class="icon-button notification-button" aria-label="Notifications" id="notificationsBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button>
+          <button class="avatar avatar-you top-avatar" data-view="profile" aria-label="Open profile">M</button>
+        </div>
+      </header>
+
+      <div class="content-grid">
+        <section class="feed-column" id="viewRoot">
+          <section class="welcome-card">
+            <div class="welcome-copy">
+              <span class="eyebrow-pill"><span>✦</span> YOUR DAILY PAGE</span>
+              <h2>Stories are better<br>when <em>shared.</em></h2>
+              <p>A little inspiration from your reading circle, just for you.</p>
+              <button class="primary-btn" id="startReading">Set a reading goal <span>↗</span></button>
+            </div>
+            <div class="welcome-art" aria-label="Illustration of books, leaves, and a mug">
+              <div class="art-sun"></div><div class="art-leaf leaf-one"></div><div class="art-leaf leaf-two"></div>
+              <div class="art-book book-back"></div><div class="art-book book-mid"></div><div class="art-book book-front"><span>THE<br>QUIET<br>WILD</span></div>
+              <div class="art-mug"><span>〰</span></div><div class="art-steam">⌁</div>
+              <div class="art-ground"></div>
+            </div>
+            <span class="welcome-doodle">✳</span>
+          </section>
+
+          <section class="compose-card">
+            <div class="compose-top"><span class="avatar avatar-you">M</span><button id="composePrompt" class="compose-placeholder">What’s on your mind, Morgan?</button></div>
+            <div class="compose-bottom"><div class="compose-options"><button data-compose="review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L20 7.5 16.5 4z"/><path d="m14.8 5.7 3.5 3.5M4 4h6"/></svg><span>Review a book</span></button><button data-compose="quote"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11H4V6h5v5Zm11 0h-5V6h5v5ZM4 11c0 5 2 7 5 7M15 11c0 5 2 7 5 7"/></svg><span>Share a quote</span></button><button data-compose="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Reading update</span></button></div><button class="post-btn" id="openComposer">Create post <span>↗</span></button></div>
+          </section>
+
+          <div class="feed-heading"><div><span class="section-kicker">FROM YOUR CIRCLE</span><h2>The reading room <span class="leaf-flourish">✳</span></h2></div><div class="feed-filters"><button class="filter-btn active" data-filter="all">For you</button><button class="filter-btn" data-filter="following">Following</button><button class="filter-btn" data-filter="reviews">Reviews</button></div></div>
+          <div id="feedList" class="feed-list">
+            <article class="post-card" data-kind="review" data-author="elena">
+              <div class="post-head"><span class="avatar avatar-elena">E</span><div class="post-author"><strong>Elena Rivers <span class="verified">✦</span></strong><small>@elena.turns.pages · 24 min ago</small></div><button class="more-button" aria-label="More post options">···</button></div>
+              <p class="post-copy">Some books feel like opening a window in a room you didn’t know was stuffy. <em>Remarkably Bright Creatures</em> was exactly that for me. A tender, strange little reminder that connection can arrive from the most unexpected places. 🐙</p>
+              <div class="review-attachment">
+                <div class="mini-cover cover-octopus"><span class="cover-kicker">A NOVEL</span><strong>REMARKABLY<br>BRIGHT<br>CREATURES</strong><span class="cover-author">SHELby VAN PELT</span><span class="octo">✳</span></div>
+                <div class="attachment-details"><span class="tag tag-sage">MAGICAL REALISM</span><h3>Remarkably Bright Creatures</h3><p>by Shelby Van Pelt</p><div class="stars">★★★★★ <span>4.8</span></div><blockquote>“A soft, saltwater hug of a book.”</blockquote><button class="text-action add-book" data-book="Remarkably Bright Creatures">＋ Add to shelf</button></div>
+              </div>
+              <div class="post-actions"><button class="like-btn"><span>♡</span> <b>42</b> appreciations</button><button class="comment-btn">○ <b>8</b> notes</button><button class="share-btn">↗ <span>Share</span></button><button class="bookmark-btn" aria-label="Save post">♧</button></div>
+              <div class="comments-preview"><span class="avatar avatar-small avatar-jules">J</span><p><strong>Jules</strong> Okay, adding this to my rainy-day stack immediately.</p><button class="view-comments">View all 8 notes</button></div>
+            </article>
+
+            <article class="post-card" data-kind="quote" data-author="jules">
+              <div class="post-head"><span class="avatar avatar-jules">J</span><div class="post-author"><strong>Jules Bennett</strong><small>@jules.afterdark · 1 hr ago</small></div><button class="more-button" aria-label="More post options">···</button></div>
+              <div class="quote-art"><span class="quote-mark">“</span><p>There is no exquisite beauty<br>without some strangeness<br>in the proportion.</p><span class="quote-attribution">— EDGAR ALLAN POE</span><span class="quote-botanical">❧</span></div>
+              <div class="quote-caption">A line I keep coming back to. What quote has followed you lately?</div>
+              <div class="post-actions"><button class="like-btn"><span>♡</span> <b>26</b> appreciations</button><button class="comment-btn">○ <b>4</b> notes</button><button class="share-btn">↗ <span>Share</span></button><button class="bookmark-btn" aria-label="Save post">♧</button></div>
+            </article>
+
+            <article class="post-card" data-kind="progress" data-author="sam">
+              <div class="post-head"><span class="avatar avatar-sam">S</span><div class="post-author"><strong>Sam Okafor</strong><small>@sam.reads.slowly · 3 hrs ago</small></div><button class="more-button" aria-label="More post options">···</button></div>
+              <p class="post-copy">A tiny reading win: 20 pages before the world woke up. Keeping this morning ritual feels like planting a little seed for the day. 🌱</p>
+              <div class="progress-card"><div class="progress-book-cover">THE<br><b>OVERSTORY</b><small>RICHARD POWERS</small></div><div class="progress-info"><span class="tag tag-coral">READING UPDATE</span><h3>The Overstory</h3><p>Page 146 of 502</p><div class="progress-track"><span style="width:29%"></span></div><div class="progress-meta"><span>29% complete</span><span>+20 pages today</span></div></div><span class="tiny-sprout">♧</span></div>
+              <div class="post-actions"><button class="like-btn"><span>♡</span> <b>17</b> appreciations</button><button class="comment-btn">○ <b>3</b> notes</button><button class="share-btn">↗ <span>Share</span></button><button class="bookmark-btn" aria-label="Save post">♧</button></div>
+            </article>
+          </div>
+          <button id="loadMore" class="load-more">You’re all caught up — <span>turn another page ↗</span></button>
+        </section>
+
+        <aside class="right-rail">
+          <section class="rail-card daily-pick">
+            <div class="rail-heading"><div><span class="section-kicker">A LITTLE INSPIRATION</span><h3>Today's book nook</h3></div><span class="sparkle">✳</span></div>
+            <div class="daily-book">
+              <div class="large-cover cover-garden"><span class="cover-small">A NOVEL</span><strong>THE<br>SECRET<br>GARDEN</strong><span class="cover-flower">✿</span><small>FRANCES HODGSON BURNETT</small></div>
+              <div class="daily-book-info"><span class="tag tag-sage">CLASSIC</span><h4>The Secret Garden</h4><p>Frances Hodgson Burnett</p><div class="stars">★★★★★ <span>4.7</span></div><button class="outline-btn add-book" data-book="The Secret Garden">＋ Want to read</button></div>
+            </div>
+            <p class="daily-note">“Where you tend a rose, my lad, a thistle cannot grow.”</p>
+          </section>
+
+          <section class="rail-card goal-card">
+            <div class="rail-heading"><div><span class="section-kicker">YOUR 2026 JOURNEY</span><h3>Pages in progress</h3></div><span class="goal-icon">↗</span></div>
+            <div class="goal-number"><strong id="booksRead">18</strong><span>of 30 books</span><span class="goal-percent">60%</span></div>
+            <div class="goal-track"><span></span></div>
+            <div class="goal-footer"><span>12 books to go</span><span>You're doing lovely.</span></div>
+          </section>
+
+          <section class="rail-card club-card">
+            <div class="rail-heading"><div><span class="section-kicker">GATHER AROUND</span><h3>Your book circles</h3></div><button class="plain-arrow" data-view="clubs" aria-label="See all clubs">↗</button></div>
+            <div class="club-row"><div class="club-icon club-fern">❧</div><div class="club-details"><strong>The Slow Readers</strong><small>126 members · 3 new notes</small></div><span class="club-unread"></span></div>
+            <div class="club-row"><div class="club-icon club-moon">☾</div><div class="club-details"><strong>After Hours Fiction</strong><small>84 members · reading Dune</small></div></div>
+            <button class="outline-btn full-width" data-view="clubs">Explore book clubs <span>↗</span></button>
+          </section>
+
+          <section class="rail-card people-card">
+            <div class="rail-heading"><div><span class="section-kicker">GOOD COMPANY</span><h3>Readers to know</h3></div><button class="plain-arrow" id="refreshPeople" aria-label="Refresh reader suggestions">↻</button></div>
+            <div class="person-row"><span class="avatar avatar-ivy">I</span><div class="person-info"><strong>Ivy Chen</strong><small>Poetry & tiny joys</small></div><button class="follow-btn">Follow</button></div>
+            <div class="person-row"><span class="avatar avatar-noah">N</span><div class="person-info"><strong>Noah Williams</strong><small>Fantasy, folklore</small></div><button class="follow-btn">Follow</button></div>
+            <div class="person-row"><span class="avatar avatar-rhea">R</span><div class="person-info"><strong>Rhea Patel</strong><small>Memoir & essays</small></div><button class="follow-btn">Follow</button></div>
+          </section>
+          <footer class="rail-footer"><a href="#">About</a><a href="#">Community</a><a href="#">Guidelines</a><a href="#">Privacy</a><span>Made with a little bookish magic <b>✳</b></span>© Shelves 2026</footer>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation"><button class="active" data-view="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><small>Home</small></button><button data-view="discover"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><small>Discover</small></button><button id="mobileCompose" class="mobile-compose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><small>Post</small></button><button data-view="shelves"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h12a2 2 0 0 1 2 2V21H7a2 2 0 0 1-2-2z"/><path d="M5 18.5A2.5 2.5 0 0 1 7.5 16H19M9 7h6M9 10h6"/></svg><small>Shelves</small></button><button data-view="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.3-6 7.5-6s6.7 2 7.5 6"/></svg><small>You</small></button></nav>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="closeModal" aria-label="Close dialog">×</button>
+      <span class="section-kicker">A NOTE FOR YOUR READING CIRCLE</span>
+      <h2 id="modalTitle">Share a little thought</h2>
+      <p class="modal-subtitle">Good conversations start with one small page.</p>
+      <form id="postForm" novalidate>
+        <label class="field-label" for="postType">What are you sharing?</label>
+        <select id="postType"><option value="thought">A reading thought</option><option value="review">A book review</option><option value="quote">A favorite quote</option><option value="progress">Reading progress</option></select>
+        <label class="field-label" for="postText">Your note</label>
+        <textarea id="postText" rows="4" maxlength="1200" placeholder="A sentence, a feeling, a book you can't stop thinking about…" required aria-describedby="postTextHelp"></textarea><div id="postTextHelp" class="field-help">A little note, up to 1,200 characters.</div>
+        <label class="field-label" for="postBook">Book title <span>(optional)</span></label>
+        <input id="postBook" type="text" placeholder="What are you reading?">
+        <div class="form-footer"><span>✳ Be kind. Be curious.</span><button class="primary-btn" type="submit">Share with your circle ↗</button></div>
+      </form>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="library.js"></script>
+  <script src="app.js"></script>
+  <script src="startup.js"></script>
+</body>
+</html>

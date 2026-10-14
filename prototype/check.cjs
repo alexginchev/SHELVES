@@ -1,0 +1,10 @@
+const vm = require('node:vm');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const context = vm.createContext({document:{addEventListener(){}}});
+vm.runInContext(fs.readFileSync('library.js','utf8'),context);
+const result = vm.runInContext("recommendBooks(catalog,{'The Overstory':'Finished'},{'The Overstory':5},['Piranesi'])",context);
+assert.equal(result[0].title,'Small Things Like These');
+assert(!result.some(b=>['The Overstory','Piranesi'].includes(b.title)));
+assert(result[0].reason.includes('literary'));
+console.log('Recommendation ranking, exclusions, and explanations passed.');
