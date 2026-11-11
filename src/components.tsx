@@ -1,7 +1,24 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import type { Book, Post, User } from "../shared/types";
+import { api } from "./api";
+import { CommentActions } from "./CommentActions";
+import { createPortal } from "react-dom";
+import { ReportButton } from "./SocialSafety";
+import { ShelvesBadge } from "./ShelvesBadge";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormHTMLAttributes,
+  type ReactNode,
+} from "react";
+import type { Book, Post, User, Comment } from "../shared/types";
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, ReactNode> = {
+    bell: (
+      <>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+      </>
+    ),
     home: <path d="m3 10 9-7 9 7v10H15v-7H9v7H3Z" />,
     search: (
       <>
@@ -53,7 +70,18 @@ export function Icon({ name }: { name: string }) {
     </svg>
   );
 }
-export function Avatar({ name }: { name: string }) {
+export function Avatar({ name, src }: { name: string; src?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (src && !failed)
+    return (
+      <img
+        className="avatar avatar-you avatar-image"
+        src={src}
+        alt=""
+        onError={() => setFailed(true)}
+      />
+    );
   return (
     <span className="avatar avatar-you" aria-hidden="true">
       {name[0]?.toUpperCase() || "R"}
@@ -64,14 +92,27 @@ export function Dialog({
   title,
   onClose,
   children,
+  dirty = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  dirty?: boolean;
 }) {
+  const [confirmClose, setConfirmClose] = useState(false);
+  const requestClose = () => (dirty ? setConfirmClose(true) : onClose());
+  useEffect(() => {
+    if (!dirty) return;
+    const protect = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [dirty]);
   const ref = useRef<HTMLDialogElement>(null);
   const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  closeRef.current = requestClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const dialog = ref.current!;
@@ -81,7 +122,7 @@ export function Dialog({
       previous?.focus();
     };
   }, []);
-  return (
+  return createPortal(
     <dialog
       ref={ref}
       className="book-dialog"
@@ -91,15 +132,36 @@ export function Dialog({
         closeRef.current();
       }}
     >
-      <button
-        className="app-dialog-close"
-        onClick={onClose}
-        aria-label="Close dialog"
-      >
-        ×
-      </button>
+      <div className="dialog-topline">
+        <button
+          className="app-dialog-close"
+          onClick={requestClose}
+          aria-label="Close dialog"
+        >
+          ×
+        </button>
+      </div>
       {children}
-    </dialog>
+      {confirmClose && (
+        <Dialog title="Discard changes?" onClose={() => setConfirmClose(false)}>
+          <h2>Discard changes?</h2>
+          <p>Your unsaved changes will be lost.</p>
+          <div className="list-actions">
+            <button
+              className="outline-btn"
+              autoFocus
+              onClick={() => setConfirmClose(false)}
+            >
+              Keep editing
+            </button>
+            <button className="primary-btn" onClick={onClose}>
+              Discard changes
+            </button>
+          </div>
+        </Dialog>
+      )}
+    </dialog>,
+    document.body,
   );
 }
 export function Cover({
@@ -109,16 +171,15 @@ export function Cover({
   book: Book;
   small?: boolean;
 }) {
-  return book.cover ? (
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [book.cover]);
+  return book.cover && !failed ? (
     <img
       className={small ? "real-cover small-cover" : "real-cover"}
       src={book.cover}
       alt={`${book.title} cover`}
       loading="lazy"
-      onError={(e) => {
-        e.currentTarget.style.display = "none";
-        e.currentTarget.nextElementSibling?.classList.remove("cover-hidden");
-      }}
+      onError={() => setFailed(true)}
     />
   ) : (
     <PaperCover book={book} small={small} />
@@ -136,9 +197,10 @@ export function PaperCover({
   return (
     <div
       className={`${small ? "mini-cover" : "large-cover"} paper-cover color-${book.color} ${hidden ? "cover-hidden" : ""}`}
+      aria-hidden="true"
     >
       <span className="cover-small">A SHELVES PICK</span>
-      <strong>{book.title.toUpperCase()}</strong>
+      <strong title={book.title}>{book.title.toUpperCase()}</strong>
       <span className="cover-flower">✿</span>
       <small>{book.author.toUpperCase()}</small>
     </div>
@@ -157,21 +219,29 @@ export function BookCard({
 }) {
   return (
     <article className="book-tile">
-      <button
+      <a
         className="book-open"
-        onClick={() => onOpen(book)}
+        href={`#book/${book.id}`}
+        onClick={(event) => {
+          if (
+            event.button !== 0 ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.shiftKey ||
+            event.altKey
+          )
+            return;
+          event.preventDefault();
+          onOpen(book);
+        }}
         aria-label={`Open ${book.title}`}
       >
         <Cover book={book} />
-        {book.cover ? <PaperCover book={book} hidden /> : null}
         <h3>{book.title}</h3>
-      </button>
+      </a>
       <p>{book.author}</p>
       <span className="tag tag-sage">{book.genre}</span>
       {reason ? <p className="recommendation-reason">{reason}</p> : null}
-      <button className="outline-btn" onClick={() => onOpen(book)}>
-        View book ↗
-      </button>
       {onDismiss ? (
         <button className="dismiss-book" onClick={() => onDismiss(book)}>
           Not interested
@@ -195,24 +265,116 @@ export function PostCard({
   onDelete: (p: Post) => void;
   onEdit?: (p: Post) => void;
 }) {
+  const [comments, setComments] = useState(post.comments);
+  const [nextComments, setNextComments] = useState(post.commentsCursor),
+    [commentCount, setCommentCount] = useState(
+      post.commentCount ?? post.comments.length,
+    ),
+    [commentsBusy, setCommentsBusy] = useState(false),
+    [commentsError, setCommentsError] = useState("");
+  const commentsRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    commentsRequest.current?.abort();
+    commentsRequest.current = null;
+    setComments(post.comments);
+    setNextComments(post.commentsCursor);
+    setCommentCount(post.commentCount ?? post.comments.length);
+    setCommentsBusy(false);
+    setCommentsError("");
+    return () => commentsRequest.current?.abort();
+  }, [post.comments, post.commentsCursor, post.commentCount, user?.id]);
+  async function olderComments() {
+    if (!nextComments || commentsRequest.current) return;
+    const controller = new AbortController();
+    commentsRequest.current = controller;
+    setCommentsBusy(true);
+    setCommentsError("");
+    try {
+      const page = await api<{
+        items: Comment[];
+        nextCursor: string | null;
+        total: number;
+      }>(
+        `/posts/${post.id}/comments?before=${encodeURIComponent(nextComments)}`,
+        {
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(15000),
+          ]),
+        },
+      );
+      if (!controller.signal.aborted) {
+        setComments((old) => [
+          ...old,
+          ...page.items.filter((c) => !old.some((x) => x.id === c.id)),
+        ]);
+        setNextComments(page.nextCursor);
+        setCommentCount(page.total);
+      }
+    } catch (e) {
+      if (!controller.signal.aborted)
+        setCommentsError(
+          e instanceof Error ? e.message : "Could not load older notes.",
+        );
+    } finally {
+      if (!controller.signal.aborted) {
+        setCommentsBusy(false);
+        commentsRequest.current = null;
+      }
+    }
+  }
   const content = (
     <>
       <p className={`post-copy ${post.kind === "quote" ? "quote-copy" : ""}`}>
         {post.body}
       </p>
-      {post.comments.map((c) => (
+      {[...comments].reverse().map((c) => (
         <div className="comment-line" key={c.id}>
           <strong>{c.displayName}</strong> <span>{c.body}</span>
+          {user?.id === c.userId ? (
+            <CommentActions
+              comment={c}
+              onSaved={(body) => {
+                if (body === null) setCommentCount((n) => Math.max(0, n - 1));
+                setComments((old) =>
+                  body === null
+                    ? old.filter((x) => x.id !== c.id)
+                    : old.map((x) => (x.id === c.id ? { ...x, body } : x)),
+                );
+              }}
+            />
+          ) : null}
+          {user && user.id !== c.userId ? (
+            <ReportButton kind="comment" targetId={c.id} />
+          ) : null}
         </div>
       ))}
+      <ErrorMessage message={commentsError} />
+      {commentsBusy ? (
+        <p role="status">Loading older notes…</p>
+      ) : nextComments ? (
+        <button className="outline-btn" onClick={() => void olderComments()}>
+          {commentsError ? "Try again" : "Load older notes"}
+        </button>
+      ) : null}
     </>
   );
   return (
     <article className="post-card">
       <div className="post-head">
-        <Avatar name={post.displayName} />
+        <Avatar
+          name={post.displayName}
+          src={
+            post.avatarVersion
+              ? `/api/readers/${post.userId}/images/avatar?v=${post.avatarVersion}`
+              : undefined
+          }
+        />
         <div className="post-author">
-          <strong>{post.displayName}</strong>
+          <a className="reader-link" href={`#reader/${post.userId}`}>
+            <strong>{post.displayName}</strong>{" "}
+            <ShelvesBadge verified={post.isAdmin} />
+          </a>
           <small>
             @{post.username} · {new Date(post.createdAt).toLocaleDateString()}
           </small>
@@ -261,8 +423,11 @@ export function PostCard({
           <b>{post.likes}</b> appreciations
         </button>
         <button className="comment-btn" onClick={() => onComment(post)}>
-          {post.comments.length} notes
+          {commentCount} notes
         </button>
+        {user && user.id !== post.userId ? (
+          <ReportButton kind="post" targetId={post.id} />
+        ) : null}
         {user?.id === post.userId ? (
           <>
             {post.kind === "review" && post.bookId && onEdit ? (
@@ -285,4 +450,62 @@ export function ErrorMessage({ message }: { message: string }) {
       {message}
     </p>
   ) : null;
+}
+// Keep platform constraints, but present errors inside the application.
+export function Form({
+  onSubmit,
+  children,
+  ...props
+}: FormHTMLAttributes<HTMLFormElement>) {
+  const errorId = useId();
+  const [message, setMessage] = useState("");
+  function clear(form: HTMLFormElement) {
+    for (const field of Array.from(form.elements)) {
+      if (field.getAttribute("aria-describedby") === errorId) {
+        field.removeAttribute("aria-invalid");
+        field.removeAttribute("aria-describedby");
+      }
+    }
+  }
+  return (
+    <form
+      {...props}
+      noValidate
+      onInput={(e) => {
+        clear(e.currentTarget);
+        setMessage("");
+      }}
+      onSubmit={(e) => {
+        clear(e.currentTarget);
+        const invalid = Array.from(e.currentTarget.elements).find(
+          (
+            field,
+          ): field is
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement =>
+            (field instanceof HTMLInputElement ||
+              field instanceof HTMLTextAreaElement ||
+              field instanceof HTMLSelectElement) &&
+            !field.validity.valid,
+        );
+        if (invalid) {
+          e.preventDefault();
+          invalid.setAttribute("aria-invalid", "true");
+          invalid.setAttribute("aria-describedby", errorId);
+          setMessage(invalid.validationMessage);
+          invalid.focus();
+          invalid.scrollIntoView({ block: "center" });
+        } else {
+          setMessage("");
+          onSubmit?.(e);
+        }
+      }}
+    >
+      {message ? (
+        <p id={errorId} className="form-error" role="alert">
+          {message}
+        </p>
+      ) : null}
+      {children}
+    </form>
+  );
 }

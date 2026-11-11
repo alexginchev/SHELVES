@@ -1,7 +1,7 @@
 import { createServer } from "vite";
 import { createApp } from "./app.ts";
-import { openDatabase } from "./db.ts";
-const db = openDatabase(process.env.DATABASE_PATH || "./data/shelves.db");
+import { openRuntimeDatabase } from "./runtime-db.ts";
+const db = await openRuntimeDatabase();
 const app = createApp(db);
 const vite = await createServer({
   server: { middlewareMode: true },
@@ -19,7 +19,7 @@ const server = app.listen(
 async function stop() {
   server.close();
   await vite.close();
-  db.close();
+  await db.close();
   process.exit(0);
 }
 process.on("SIGINT", stop);

@@ -1,3 +1,4 @@
+import { readingGenres } from "./genres.ts";
 import { z } from "zod";
 export const statusSchema = z.enum([
   "Want to read",
@@ -34,6 +35,38 @@ export const readingSchema = z.object({
   shelfIds: z.array(z.string().uuid()).max(50),
 });
 export const shelfSchema = z.object({ name: z.string().trim().min(1).max(60) });
+
+export const preferencesSchema = z.object({
+  genres: z
+    .array(z.enum(readingGenres))
+    .max(5)
+    .refine(
+      (values) => new Set(values).size === values.length,
+      "Choose each genre only once.",
+    ),
+});
+export type ReadingPreferences = { genres: string[]; completed: boolean };
+export const listSchema = z.object({
+  title: z.string().trim().min(1).max(100),
+  description: z.string().trim().max(1000),
+  visibility: z.enum(["private", "public"]),
+  bookIds: z
+    .array(z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/))
+    .max(50)
+    .refine(
+      (ids) => new Set(ids).size === ids.length,
+      "Each book can appear only once.",
+    ),
+});
+export type BookList = {
+  id: string;
+  userId: string;
+  displayName: string;
+  title: string;
+  description: string;
+  visibility: "private" | "public";
+  books: Book[];
+};
 export const postSchema = z.object({
   body: z.string().trim().min(1).max(1200),
   kind: z.enum(["thought", "quote", "review", "progress"]),
@@ -48,6 +81,9 @@ export const publicReviewSchema = z.object({
   containsSpoilers: z.boolean(),
 });
 export type User = {
+  isAdmin?: boolean;
+  avatarVersion?: string | null;
+  bannerVersion?: string | null;
   id: string;
   username: string;
   displayName: string;
@@ -78,6 +114,8 @@ export type Reading = {
 export type Shelf = { id: string; name: string; count: number };
 export type Recommendation = Book & { reason: string };
 export type Post = {
+  isAdmin?: boolean;
+  avatarVersion?: string | null;
   id: string;
   body: string;
   kind: string;
@@ -93,20 +131,49 @@ export type Post = {
   containsSpoilers: boolean;
   editedAt: string | null;
   comments: Comment[];
+  commentCount?: number;
+  commentsCursor?: string | null;
 };
 export type BookSummary = { averageRating: number | null; reviewCount: number };
 export type Comment = {
+  userId?: string;
   id: string;
   body: string;
   displayName: string;
   createdAt: string;
 };
 export type Reader = {
+  reason?: string;
+  interactionBlocked?: boolean;
+  activityHidden?: boolean;
+  isAdmin?: boolean;
+  avatarVersion?: string | null;
+  bannerVersion?: string | null;
   id: string;
   username: string;
   displayName: string;
   bio: string;
   following: boolean;
+};
+export type ReaderProfile = {
+  reader: Reader;
+  followers: number;
+  followingCount: number;
+  posts: Post[];
+};
+export type Notification = {
+  id: string;
+  actorId: string;
+  displayName: string;
+  kind: "like" | "comment" | "follow";
+  postId: string | null;
+  createdAt: string;
+  readAt: string | null;
+};
+export type NotificationInbox = {
+  items: Notification[];
+  unread: number;
+  nextCursor: string | null;
 };
 export type Stats = {
   finished: number;
