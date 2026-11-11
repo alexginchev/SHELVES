@@ -165,3 +165,12 @@ All six starter books use real, locally served jacket images with provenance in 
 Author and personal-library routes use the full content width without the unrelated right rail. Their shared collection-books variant keeps cover columns at a consistent size even for a single book, with left-aligned titles and metadata on the page rather than inside large gradient cards. Existing BookCard links and focus behavior remain canonical. Status navigation uses underlined text buttons with explicit pressed state; search and sorting occupy compact fields.
 
 Author profiles lead with a book-shaped initials mark, the credited name and a short collection label. The mark uses existing --blue-pale and --sage tokens; it never implies a verified portrait. No biography is invented from book metadata. Catalog owns the filter form, now inside a native disclosure on author pages. Existing palette and typography remain unchanged.
+
+Discover now shares this collection layout: full-width covers, a compact title/search-language toolbar, and one route to advanced catalogue filters. Home recommendations reuse the same cards without a surrounding panel. Recommendation reasons remain visible and dismissal remains independently actionable. Empty feed pagination occupies no space. The unrelated static quotation is removed from the rotating book pick.
+
+### Next design priorities
+
+- Signed-in home: prioritize current reading, quick progress updates and recent community activity over the guest welcome illustration. Preserve the guest introduction separately.
+- Author identity: verified biography, portrait and source attribution require a reliable author record and identity matching, not inference from credited names.
+- Editions: offer a work-level browsing view only once grouping reliably distinguishes translations, editions and same-title books; keep existing edition-specific records intact.
+- Mobile navigation: consolidate secondary links into an accessible menu to bring content closer to the top; preserve keyboard access and all current destinations.

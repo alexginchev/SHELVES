@@ -30,6 +30,7 @@ const { auditLayout } = require("./layout.cjs");
     const page = await browser.newPage(),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(base + "/#home");
     await page.locator(".book-tile img").first().waitFor();
     assert.equal(await page.locator(".sidebar-note,.rail-footer").count(), 0);
@@ -50,6 +51,16 @@ const { auditLayout } = require("./layout.cjs");
         path: `test-results/site-home-${width}.png`,
         fullPage: true,
       });
+      await page.goto(base + "/#discover");
+      await page.locator(".discover-page .book-tile").first().waitFor();
+      assert.equal(await page.locator(".right-rail").isVisible(), false);
+      await auditLayout(page, "discover collection " + width);
+      await page.screenshot({
+        path: `test-results/site-discover-${width}.png`,
+        fullPage: true,
+      });
+      await page.goto(base + "/#home");
+      await page.locator(".book-tile img").first().waitFor();
       for (const label of ["Terms of use", "Cookies"]) {
         await page
           .locator(".site-footer")

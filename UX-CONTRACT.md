@@ -211,6 +211,8 @@ App owns private library search/sort/status and shelf CRUD as before. Status but
 
 ### Header behavior
 
+Discover and home recommendations use the shared collection-books variant. Discover's existing query, language, IME, cancellation, provider notices and retry behavior are unchanged. Advanced genre/year filtering remains in Catalog. BookCard still owns native card links and the independent Not interested action. Site identity browser checks include full-width Discover and home at 1477/390/320px, including failed-cover fallback and legal-route navigation.
+
 HeaderSearch owns transient query, language, page and popup state independently of Discover. Typing never navigates. Queries require two characters, debounce for 300ms, pause during IME composition, cancel superseded requests and time out after 15 seconds. Enter and pagination request immediately. Loading, empty, provider fallback and retry states stay within the popup. Escape/Close restore input focus; outside interaction and route changes dismiss it. Arrow keys move among native result links; selecting a result opens its book route. No search state is written to the URL.
 
 BrandMark uses the supplied SVG unchanged; BrandLoading uses a derived looping book-stack SVG with reduced-motion support. Startup, book opening, Discover and header search share this loader. tests/header-search-browser.cjs covers inline navigation behavior, loading, pagination, empty/error recovery, IME, keyboard selection and desktop/mobile layout.

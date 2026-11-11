@@ -553,7 +553,7 @@ export function App() {
             </div>
           ) : null}
           <div
-            className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" ? "collection-layout" : ""}`}
+            className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" ? "collection-layout" : ""}`}
           >
             <section className="feed-column" aria-busy={loading}>
               {(view === "terms" || view === "cookies") && (
@@ -882,12 +882,14 @@ export function App() {
                       </section>
                     ) : null}
                   </div>
-                  <section className="view-panel">
-                    <span className="section-kicker">
-                      MADE FOR YOUR NEXT CHAPTER
-                    </span>
-                    <h2>Something good is waiting.</h2>
-                    <div className="book-grid">
+                  <section className="view-panel home-recommendations">
+                    <div className="collection-heading">
+                      <h2>Next on your shelf</h2>
+                      <a className="plain-link" href="#discover">
+                        Explore all picks ↗
+                      </a>
+                    </div>
+                    <div className="book-grid collection-books">
                       {data.recommendations.slice(0, 3).map((b) => (
                         <BookCard
                           key={b.id}
@@ -897,12 +899,6 @@ export function App() {
                         />
                       ))}
                     </div>
-                    <button
-                      className="plain-link"
-                      onClick={() => navigate("discover")}
-                    >
-                      Explore all picks ↗
-                    </button>
                   </section>
                 </>
               ) : null}
@@ -920,57 +916,58 @@ export function App() {
                 <Catalog onBook={openBookPage} />
               ) : null}
               {!loading && view === "discover" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    {query.trim().length >= 2
-                      ? "FOLLOW YOUR CURIOSITY"
-                      : "MADE FOR YOU"}
-                  </span>
-                  <h2>
-                    {query.trim().length >= 2
-                      ? "A story to look for."
-                      : "Find your next favorite."}
-                  </h2>
+                <section className="view-panel discover-page">
+                  <div className="collection-heading">
+                    <h2>
+                      {query.trim().length >= 2
+                        ? "Search results"
+                        : "Recommended for you"}
+                    </h2>
+                    <a className="plain-link" href="#catalog">
+                      Browse catalogue by genre and year ↗
+                    </a>
+                  </div>
                   <p className="view-intro">
                     {query.trim().length >= 2
-                      ? "Search real books by title or author."
-                      : "Picks shaped by your saved books and ratings. A different path is always welcome."}
+                      ? "Choose a book to see its details and editions."
+                      : data.user
+                        ? "Picks shaped by your reading. Each book includes why it was selected."
+                        : "Start with the Shelves collection, or search for a title you know."}
                   </p>
-                  <a className="plain-link" href="#catalog">
-                    Browse catalogue by genre and year ↗
-                  </a>
-                  <label className="discover-search">
-                    Book title or author
-                    <input
-                      type="search"
-                      value={query}
-                      maxLength={120}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onCompositionStart={() => setSearchComposing(true)}
-                      onCompositionEnd={() => setSearchComposing(false)}
-                      placeholder="Try Ursula K. Le Guin"
-                    />
-                    {query ? (
-                      <button
-                        type="button"
-                        className="plain-link"
-                        onClick={(e) => {
-                          setQuery("");
-                          e.currentTarget.parentElement
-                            ?.querySelector("input")
-                            ?.focus();
-                        }}
-                      >
-                        Clear search
-                      </button>
-                    ) : null}
-                  </label>
-                  <div className="library-tools">
-                    <LanguageSelect
-                      value={searchLanguage}
-                      onChange={setSearchLanguage}
-                      label="Search language"
-                    />
+                  <div className="discovery-toolbar">
+                    <label className="discover-search">
+                      Book title or author
+                      <input
+                        type="search"
+                        value={query}
+                        maxLength={120}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onCompositionStart={() => setSearchComposing(true)}
+                        onCompositionEnd={() => setSearchComposing(false)}
+                        placeholder="Try Ursula K. Le Guin"
+                      />
+                      {query ? (
+                        <button
+                          type="button"
+                          className="plain-link"
+                          onClick={(e) => {
+                            setQuery("");
+                            e.currentTarget.parentElement
+                              ?.querySelector("input")
+                              ?.focus();
+                          }}
+                        >
+                          Clear search
+                        </button>
+                      ) : null}
+                    </label>
+                    <div className="library-tools">
+                      <LanguageSelect
+                        value={searchLanguage}
+                        onChange={setSearchLanguage}
+                        label="Search language"
+                      />
+                    </div>
                   </div>
                   {searching ? (
                     <BrandLoading label="Looking through the catalogue…" />
@@ -994,7 +991,7 @@ export function App() {
                       {search.items.length} results · {search.source}
                     </p>
                   ) : null}
-                  <div className="book-grid">
+                  <div className="book-grid collection-books">
                     {(query.trim().length >= 2
                       ? search?.items || []
                       : data.recommendations
@@ -1403,9 +1400,6 @@ export function App() {
                       <p>{spotlight.author}</p>
                     </div>
                   </div>
-                  <p className="pick-quote">
-                    “Where you tend a rose, my lad, a thistle cannot grow.”
-                  </p>
                 </section>
               ) : null}
               <section className="rail-card goal-card">

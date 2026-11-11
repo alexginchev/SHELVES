@@ -2218,6 +2218,9 @@ body:has(dialog[open]) {
   gap: 12px;
   padding: 20px 0;
 }
+.feed-pagination:empty {
+  display: none;
+}
 .comment-line .safety-actions {
   margin-top: 8px;
 }
@@ -2608,7 +2611,50 @@ body:has(dialog[open]) {
   margin: 4px 0 0;
   font-size: 12px;
 }
+.home-recommendations {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 12px 0;
+}
+.home-recommendations .collection-books {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.collection-books .dismiss-book {
+  margin-top: auto;
+  font-size: 12px;
+}
+.discovery-toolbar {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.discovery-toolbar .discover-search {
+  flex: 1 1 300px;
+  margin: 0;
+  font-size: 12px;
+}
+.discovery-toolbar .library-tools {
+  flex: 0 1 220px;
+  margin: 0;
+  font-size: 12px;
+}
+.discovery-toolbar input,
+.discovery-toolbar select {
+  min-height: 44px;
+}
 @media (max-width: 600px) {
+  .home-recommendations .collection-books {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .discovery-toolbar .library-tools {
+    flex: 1 1 220px;
+  }
   .author-profile {
     gap: 20px;
     padding-top: 8px;

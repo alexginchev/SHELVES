@@ -218,6 +218,12 @@ Verification: 23 API/SQLite tests passed, one hosted-only migration check skippe
 Edition browser checks also passed: paging, language reload/filtering, distinct-edition saves, desktop/mobile layouts and live-search language. Restarted the local development server with the updated integration.
 
 
+## 11 November 2026 — Discover and home design refinement
+
+Extended the shared collection layout to Discover with full-width covers and a compact search/language toolbar. Simplified home recommendations to a cover-led section with one browse link, removed the unrelated quotation from the rotating book pick, and removed empty feed-pagination spacing. Existing provider search states, language filters, card navigation and dismissal behavior remain. Recorded further design priorities in DESIGN.md: useful signed-in home, verified author identity, reliable work/edition grouping and compact mobile secondary navigation.
+
+Validation: production build/typecheck, formatting and strict UI audit passed. API tests: 23 passed, one hosted migration check skipped. Full browser suite passed 66 route/viewport checks with no runtime errors. Focused identity tests verified home/Discover at 1477/390/320px and failed-cover fallback; inline search regression passed. Reviewed screenshots at desktop and narrow mobile sizes.
+
 ## 11 November 2026 — Author profiles and library redesign
 
 Replaced the author page's stacked panels with a full-width profile header, decorative initials and a cover-led bibliography. Filters and sorting live inside Catalog's native disclosure, with committed-filter indication and preserved URL behavior. About this profile retains the name-collision limitation without inventing biographies or verified portraits. Author import and catalogue requests now cancel on navigation and have bounded timeouts.
