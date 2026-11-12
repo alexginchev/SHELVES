@@ -37,14 +37,24 @@ export function ProfileIdentity({
             }
           />
         </div>
-        <span className="section-kicker">THE READER BEHIND THE BOOKS</span>
-        <h2 className="profile-display-name">
-          <ReaderName name={reader.displayName} verified={reader.isAdmin} />
-        </h2>
-        <p className="profile-handle">@{reader.username}</p>
-        <p className="preserve-lines">
-          {reader.bio || "A new chapter on Shelves."}
-        </p>
+        <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:gap-4">
+          <div className="min-w-0 w-full sm:flex-1">
+            <h2 className="profile-display-name">
+              <ReaderName name={reader.displayName} verified={reader.isAdmin} />
+            </h2>
+            <p className="profile-handle">@{reader.username}</p>
+          </div>
+          {reader.isAdmin ? (
+            <span className="rounded-full border border-solid border-line bg-paper px-3 py-1 text-xs font-medium text-muted">
+              Shelves team
+            </span>
+          ) : null}
+        </div>
+        {reader.bio ? (
+          <p className="preserve-lines mb-6 max-w-2xl text-sm text-muted">
+            {reader.bio}
+          </p>
+        ) : null}
         <div className="profile-stats">
           <a
             className="plain-link"

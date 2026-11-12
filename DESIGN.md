@@ -48,7 +48,7 @@ Shelves should feel like a small illustrated field journal kept beside a favorit
 - **Memorable signature:** Watercolor washes and paper grain behind tidy, ink-like line icons and real book covers.
 - **Restraint:** Keep feed copy and control labels legible; do not put texture beneath dense text or reduce contrast for the sake of softness.
 - **Anti-references:** Generic SaaS blue dashboards, neon gradients, emoji-only navigation, hard glassmorphism, and overdecorated stationery.
-- **Token ownership/runtime mapping:** This document owns visual intent. `src/app.css` implements the active React tokens, geometry, and watercolor surfaces together. `styles.css` belongs to the archived ZIP prototype and is not imported by React.
+- **Token ownership/runtime mapping:** This document owns visual intent. `src/app.css` owns existing tokens and watercolor surfaces; `src/design.css` is the Tailwind entry and maps those tokens into utilities and shared component refinements. `styles.css` belongs to the archived ZIP prototype and is not imported by React.
 
 ## Colors
 
@@ -120,7 +120,7 @@ The supplied ZIP remains the visual reference. CSS variables and shared styles i
 
 ## Active full-stack implementation
 
-The supplied ZIP remains the visual reference. `src/app.css` is the sole active stylesheet and owns runtime tokens, watercolor surfaces, and responsive geometry. The archived prototype stylesheet remains available as a reference. Runtime CSS is canonical (Model B); this document mirrors its accepted values and intent. Native modal dialogs in `src/components.tsx` own focus containment, Escape dismissal, and focus restoration. The shared Form owns inline constraint errors and first-invalid focus; `src/forms.tsx` owns submission and API validation recovery. Native selects own popup behavior for status/rating/sorting. `src/App.tsx` owns the desktop/mobile shell and live-region feedback. Public profiles show public social activity; private reading records stay separate.
+The supplied ZIP remains the visual reference. `src/design.css` is the active stylesheet entry: Tailwind theme, legacy app.css, component refinements, then utilities. Tailwind Preflight is intentionally omitted to preserve the existing form reset. `src/app.css` continues to own runtime tokens, watercolor surfaces, and legacy responsive geometry. The archived prototype stylesheet remains available as a reference. Runtime CSS is canonical (Model B); this document mirrors its accepted values and intent. Native modal dialogs in `src/components.tsx` own focus containment, Escape dismissal, and focus restoration. The shared Form owns inline constraint errors and first-invalid focus; `src/forms.tsx` owns submission and API validation recovery. Native selects own popup behavior for status/rating/sorting. `src/App.tsx` owns the desktop/mobile shell and live-region feedback. Public profiles show public social activity; private reading records stay separate.
 
 | Intent | Runtime owner | Consumers |
 |---|---|---|
@@ -186,3 +186,8 @@ ReaderName owns adjacent text/check alignment on profiles, posts, community sugg
 List summaries now pair up to three tilted cover previews with title, visibility, count and creator metadata on a lightly textured sage surface. Empty lists reuse the book-and-plant illustration. The title's native link covers the whole summary, with an explicit card-level keyboard outline. Covers stack above the copy on narrow screens.
 
 Browser identity uses a static square stacked-book SVG and generated PNG variants; the full animated wordmark remains in page branding. The manifest supplies standalone-window name, theme and icons without promising offline behavior or installing anything automatically.
+
+
+## Tailwind profile refinement — 12 November 2026
+
+Tailwind v4 utilities and shared component rules refine the existing watercolor/editorial identity. This is an incremental migration, not a replacement of all legacy CSS. Shared actions have quieter rounded corners and panels softer shadows. Self and public profiles use the collection-width shell without unrelated right-rail recommendations. The self profile separates reading/activity from private settings at 1200px and stacks them on mobile. The team label stacks below the name on narrow screens. ShelvesBadge uses a symmetrical circular check; the accessible administrator label and server authority stay unchanged.

@@ -1,0 +1,107 @@
+/* Tailwind utilities override the legacy layer without resetting native forms. */
+@layer theme, base, legacy, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "./app.css" layer(legacy);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Existing runtime variables remain the single color/type source of truth. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--white);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-sage: var(--sage);
+  --color-line: var(--line);
+  --font-editorial: var(--serif);
+  --font-interface: var(--sans);
+}
+
+@layer components {
+  .view-panel,
+  .compose-card,
+  .post-card,
+  .rail-card {
+    @apply rounded-2xl border-line;
+    box-shadow: 0 4px 18px #20354805;
+  }
+  .primary-btn,
+  .outline-btn,
+  .follow-btn {
+    @apply rounded-xl;
+  }
+  .primary-btn {
+    box-shadow: none;
+  }
+  .section-kicker {
+    letter-spacing: 0.14em;
+  }
+  .profile-identity {
+    @apply p-0;
+  }
+  .profile-banner {
+    aspect-ratio: auto;
+    height: clamp(150px, 20vw, 230px);
+  }
+  .profile-identity-body {
+    @apply px-6 pb-7 pt-16 sm:px-8;
+  }
+  .profile-portrait {
+    @apply left-6 sm:left-8;
+  }
+  .profile-display-name {
+    @apply m-0 font-editorial text-3xl sm:text-4xl;
+  }
+  .profile-handle {
+    @apply mt-2 mb-4 text-sm;
+  }
+  .profile-stats {
+    @apply flex flex-wrap gap-5 border-0 border-solid border-t border-line pt-4;
+  }
+  .profile-stats a {
+    @apply p-0 text-sm no-underline;
+  }
+  .profile-stats b {
+    @apply text-ink;
+  }
+  .profile-management h2 {
+    @apply text-2xl;
+  }
+  .profile-management-links {
+    @apply grid grid-cols-1 gap-3;
+  }
+  .profile-management-links a {
+    @apply rounded-xl p-4;
+  }
+  .profile-management .profile-upload-grid {
+    @apply grid-cols-1;
+  }
+  .profile-management .view-intro {
+    @apply text-sm;
+  }
+  .profile-tools .account-actions {
+    @apply mt-0;
+  }
+  .profile-tools > p {
+    @apply text-sm;
+  }
+  .profile-tools .profile-edit {
+    @apply mt-5 pt-3;
+  }
+  .shelves-badge {
+    width: 0.75em;
+    height: 0.75em;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 24px;
+    max-height: 24px;
+    vertical-align: -0.04em;
+    margin-left: 0.1em;
+    color: #367862;
+  }
+  .profile-workspace {
+    align-items: start;
+  }
+  .profile-workspace > .profile-management {
+    @apply min-w-0;
+  }
+}

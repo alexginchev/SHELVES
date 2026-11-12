@@ -554,7 +554,7 @@ export function App() {
             </div>
           ) : null}
           <div
-            className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" ? "collection-layout" : ""}`}
+            className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" ? "collection-layout" : ""}`}
           >
             <section className="feed-column" aria-busy={loading} key={view}>
               {(view === "terms" || view === "cookies") && (
@@ -1322,63 +1322,72 @@ export function App() {
                       followers={data.stats?.followers || 0}
                       following={data.stats?.following || 0}
                     />
-                    <section className="view-panel profile-tools">
-                      <div className="account-actions">
-                        <button className="primary-btn" onClick={startPost}>
-                          Write a post
-                        </button>
-                        <a
-                          className="outline-btn"
-                          href={`#reader/${data.user.id}`}
-                        >
-                          View my public profile ↗
-                        </a>
-                        <button
-                          className="plain-link"
-                          disabled={busy}
-                          onClick={() => void signOut()}
-                        >
-                          Sign out
-                        </button>
+                    <div className="profile-workspace grid min-w-0 gap-6 min-[1200px]:grid-cols-[minmax(0,1fr)_320px]">
+                      <div className="grid min-w-0 gap-6">
+                        <section className="view-panel profile-tools">
+                          <div className="account-actions">
+                            <button className="primary-btn" onClick={startPost}>
+                              Write a post
+                            </button>
+                            <a
+                              className="outline-btn"
+                              href={`#reader/${data.user.id}`}
+                            >
+                              View my public profile ↗
+                            </a>
+                            <button
+                              className="plain-link"
+                              disabled={busy}
+                              onClick={() => void signOut()}
+                            >
+                              Sign out
+                            </button>
+                          </div>
+                          <p>
+                            {finished} of {goal} books finished this year ·{" "}
+                            {data.stats?.pages || 0} pages tracked
+                          </p>
+                          <progress
+                            aria-label="Yearly reading goal"
+                            value={finished}
+                            max={goal}
+                          />
+                          <details className="profile-edit">
+                            <summary>Edit profile and reading goal</summary>
+                            <ProfileForm user={data.user} onSaved={saved} />
+                          </details>
+                        </section>
+                        <CurrentlyReading
+                          records={data.library}
+                          onSaved={saved}
+                        />
+                        <ReaderPage
+                          key={data.user.id}
+                          wallOnly
+                          id={data.user.id}
+                          user={data.user}
+                          revision={revision}
+                          busy={busy}
+                          onFollow={() => {}}
+                          onLike={(p) =>
+                            void mutate(
+                              () =>
+                                api(`/posts/${p.id}/like`, {
+                                  method: p.liked ? "DELETE" : "PUT",
+                                }),
+                              "Appreciation updated.",
+                            )
+                          }
+                          onComment={(p) =>
+                            setComposer({ kind: "comment", post: p })
+                          }
+                          onDelete={(p) =>
+                            setComposer({ kind: "delete", post: p })
+                          }
+                        />
                       </div>
-                      <p>
-                        {finished} of {goal} books finished this year ·{" "}
-                        {data.stats?.pages || 0} pages tracked
-                      </p>
-                      <progress
-                        aria-label="Yearly reading goal"
-                        value={finished}
-                        max={goal}
-                      />
-                      <details className="profile-edit">
-                        <summary>Edit profile and reading goal</summary>
-                        <ProfileForm user={data.user} onSaved={saved} />
-                      </details>
-                    </section>
-                    <ProfileManagement user={data.user} onSaved={saved} />
-                    <CurrentlyReading records={data.library} onSaved={saved} />
-                    <ReaderPage
-                      key={data.user.id}
-                      wallOnly
-                      id={data.user.id}
-                      user={data.user}
-                      revision={revision}
-                      busy={busy}
-                      onFollow={() => {}}
-                      onLike={(p) =>
-                        void mutate(
-                          () =>
-                            api(`/posts/${p.id}/like`, {
-                              method: p.liked ? "DELETE" : "PUT",
-                            }),
-                          "Appreciation updated.",
-                        )
-                      }
-                      onComment={(p) =>
-                        setComposer({ kind: "comment", post: p })
-                      }
-                      onDelete={(p) => setComposer({ kind: "delete", post: p })}
-                    />
+                      <ProfileManagement user={data.user} onSaved={saved} />
+                    </div>
                   </div>
                 ) : (
                   <section className="view-panel empty-state">

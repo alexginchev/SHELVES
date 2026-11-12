@@ -70,6 +70,17 @@ const { auditLayout } = require("./layout.cjs");
               badge.x + badge.width <= name.x + name.width + 1,
           );
           assert(badge.height <= name.height);
+          const columns = await page
+            .locator(".profile-workspace")
+            .evaluate(
+              (e) => getComputedStyle(e).gridTemplateColumns.split(" ").length,
+            );
+          assert.equal(columns, width >= 1200 ? 2 : 1);
+          if (width <= 390)
+            assert(
+              name.width > 200,
+              "Mobile identity keeps the full name column",
+            );
         }
         await page.screenshot({
           path: `test-results/watercolor-${route}-${width}.png`,
