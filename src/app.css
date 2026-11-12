@@ -2162,26 +2162,25 @@ body:has(dialog[open]) {
 }
 
 .profile-display-name {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: block;
 }
 .shelves-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  vertical-align: middle;
+  justify-content: center;
+  vertical-align: -0.12em;
   white-space: nowrap;
   color: #35624f;
-  background: #edf3ea;
-  border: 1px solid #b8cbbd;
-  border-radius: 20px;
-  padding: 3px 8px;
-  font: 600 11px/1.2 var(--sans);
+  width: 1em;
+  height: 1em;
+  min-width: 16px;
+  min-height: 16px;
+  margin-left: 0.12em;
 }
 .shelves-badge svg {
   flex-shrink: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .safety-actions {
@@ -2487,6 +2486,145 @@ body:has(dialog[open]) {
   }
 }
 
+/* Locally served watercolor materials and finite, reduced-motion-safe transitions. */
+body {
+  background-image:
+    url("/art/paper-grain.svg"),
+    radial-gradient(ellipse at 7% 7%, #dac2a630, transparent 25%),
+    radial-gradient(ellipse at 90% 31%, #bcd3d233, transparent 27%);
+  background-size:
+    180px 180px,
+    auto,
+    auto;
+}
+.view-panel,
+.rail-card,
+.compose-card,
+.post-card {
+  background-image: url("/art/paper-grain.svg");
+  background-size: 180px 180px;
+}
+.feed-column > * {
+  animation: page-arrive 300ms ease-out both;
+}
+.feed-column > :nth-child(2) {
+  animation-delay: 35ms;
+}
+.feed-column > :nth-child(3) {
+  animation-delay: 65ms;
+}
+@keyframes page-arrive {
+  from {
+    opacity: 0.35;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.book-open .real-cover,
+.book-open .paper-cover {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+@media (hover: hover) {
+  .book-open:hover .real-cover,
+  .book-open:hover .paper-cover {
+    transform: translateY(-4px) rotate(-1deg);
+    box-shadow: 5px 10px 16px #27352e24;
+  }
+}
+.book-dialog[open],
+.quick-search-panel {
+  animation: page-arrive 180ms ease-out both;
+}
+.goal-track > span,
+progress {
+  transition: width 300ms ease;
+}
+.community-garden {
+  overflow: hidden;
+}
+.community-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.6fr);
+  align-items: center;
+  gap: 12px;
+  margin: calc(-1 * var(--card-padding));
+  margin-bottom: 24px;
+  padding: var(--card-padding);
+  background:
+    url("/art/paper-grain.svg"),
+    radial-gradient(ellipse at 90% 20%, #d7e7e8bb, transparent 70%),
+    linear-gradient(115deg, #e3e9dc66, #f7f1e744);
+  border-bottom: 1px solid var(--line);
+}
+.community-intro h2 {
+  font-size: clamp(29px, 3vw, 38px);
+  margin-top: 12px;
+}
+.reading-garden-art {
+  width: 100%;
+  height: auto;
+  max-width: 360px;
+  justify-self: center;
+}
+.community-directory-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.community-directory-heading h3 {
+  font: 600 23px var(--serif);
+  margin: 0;
+}
+.community-garden .community-row {
+  padding: 20px 0;
+}
+.community-garden .person-row:last-child {
+  border-bottom: 0;
+}
+.profile-banner-default {
+  background-image:
+    url("/art/reading-garden.svg"), url("/art/paper-grain.svg"),
+    linear-gradient(115deg, #d7e7e8, #e3e9dc);
+  background-size:
+    auto 220px,
+    180px 180px,
+    auto;
+  background-position:
+    right center,
+    left top,
+    center;
+  background-repeat: no-repeat, repeat, no-repeat;
+  justify-content: flex-start;
+  padding: 24px;
+}
+.profile-banner-default span {
+  max-width: 45%;
+  text-align: left;
+}
+@media (max-width: 600px) {
+  .community-intro {
+    grid-template-columns: 1fr;
+  }
+  .reading-garden-art {
+    max-width: 200px;
+  }
+  .profile-banner-default {
+    background-size:
+      auto 170px,
+      180px 180px,
+      auto;
+  }
+  .profile-banner-default span {
+    font-size: 17px;
+  }
+}
 /* Supplied SVG identity; its own reduced-motion rules also apply when embedded. */
 .collection-layout {
   grid-template-columns: minmax(0, 1fr);

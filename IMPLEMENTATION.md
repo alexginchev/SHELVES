@@ -218,6 +218,14 @@ Verification: 23 API/SQLite tests passed, one hosted-only migration check skippe
 Edition browser checks also passed: paging, language reload/filtering, distinct-edition saves, desktop/mobile layouts and live-search language. Restarted the local development server with the updated integration.
 
 
+## 12 November 2026 — Watercolor visuals, transitions and administrator identity
+
+Added local grain and book/plant SVG artwork to page materials, the reading-circle introduction and default profile banner. Added finite route/panel arrivals and cover-hover lift with reduced-motion support. ReaderName now keeps a compact accessible admin check beside names across profiles, posts, recommendations and directory results. The directory now includes public profile-image versions and server-derived admin status, and renders uploaded portraits. Added a direct community-list link.
+
+Resolved the requested existing @alexginchev account to its immutable ID and added it to the ignored local server configuration, preserving other configured administrators. Restarted the server and verified its public profile returns isAdmin=true. This configuration is intentionally not committed; no username-based role bypass was introduced.
+
+Validation: production build/typecheck, formatting and strict UI audit passed; 23 API tests passed with one hosted migration test skipped. Corrected the directory image query to reuse the existing mediaColumns owner, then reran the full browser suite successfully (66 layout checks). Focused watercolor tests passed community/profile/directory layouts at 1477/390/320px, badge placement, reduced motion and navigation. Profile-management checks passed uploads, invalid-upload recovery, admin-only links and reload persistence. Reviewed screenshots and removed banner copy that overlapped decorative art on narrow screens.
+
 ## 12 November 2026 — Reading-first signed-in home
 
 Home now opens with CurrentlyReading for authenticated readers, retaining the illustrated welcome only for visitors. Reused the existing progress dialog and private-by-default sharing behavior. Added a useful empty state linking to discovery and saved shelves, reduced the preference prompt to an optional inline reminder, and hide the recommendations section when there are no picks.

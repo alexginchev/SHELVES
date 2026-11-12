@@ -3,6 +3,7 @@ export function ShelvesBadge({ verified }: { verified?: boolean }) {
   return (
     <span
       className="shelves-badge"
+      role="img"
       aria-label="Verified Shelves administrator"
       title="Verified Shelves administrator"
     >
@@ -20,7 +21,24 @@ export function ShelvesBadge({ verified }: { verified?: boolean }) {
           strokeLinejoin="round"
         />
       </svg>
-      Shelves
+    </span>
+  );
+}
+export function ReaderName({
+  name,
+  verified,
+}: {
+  name: string;
+  verified?: boolean;
+}) {
+  return (
+    <span className="reader-name">
+      {name}
+      {verified ? (
+        <>
+           <ShelvesBadge verified />
+        </>
+      ) : null}
     </span>
   );
 }

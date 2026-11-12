@@ -45,7 +45,7 @@ Shelves should feel like a small illustrated field journal kept beside a favorit
 - **Locale(s) and language policy:** English, browser-local dates and numbers.
 - **Usage scene:** Frequent desktop reading, with a compact mobile experience for quick updates.
 - **Register:** Hybrid: editorial warmth in the welcome area; clear, familiar controls in feed, shelves, and dialogs.
-- **Memorable signature:** Watercolor washes and paper grain behind tidy, ink-like line icons and typographic book covers.
+- **Memorable signature:** Watercolor washes and paper grain behind tidy, ink-like line icons and real book covers.
 - **Restraint:** Keep feed copy and control labels legible; do not put texture beneath dense text or reduce contrast for the sake of softness.
 - **Anti-references:** Generic SaaS blue dashboards, neon gradients, emoji-only navigation, hard glassmorphism, and overdecorated stationery.
 - **Token ownership/runtime mapping:** This document owns visual intent. `src/app.css` implements the active React tokens, geometry, and watercolor surfaces together. `styles.css` belongs to the archived ZIP prototype and is not imported by React.
@@ -174,3 +174,11 @@ Discover now shares this collection layout: full-width covers, a compact title/s
 - Author identity: verified biography, portrait and source attribution require a reliable author record and identity matching, not inference from credited names.
 - Editions: offer a work-level browsing view only once grouping reliably distinguishes translations, editions and same-title books; keep existing edition-specific records intact.
 - Mobile navigation: consolidate secondary links into an accessible menu to bring content closer to the top; preserve keyboard access and all current destinations.
+
+## Watercolor materials, motion and staff identity — 12 November 2026
+
+Local SVG artwork in public/art supplies seamless grain and a small book-and-plant illustration. Grain tiles sit in page/panel backgrounds rather than above controls. The reading-circle introduction uses a sage/mist wash with the decorative illustration; default profile banners reuse the artwork without overlapping promotional copy. Uploaded banners remain unchanged. Artwork provenance is in public/art/SOURCES.md.
+
+Route content uses a 300ms, 8px upward arrival with restrained 35/65ms staggering. Dialog and search panels use 180ms entry, and pointer-hover book covers lift 4px. All motion is finite and disabled by the existing global prefers-reduced-motion rule. No continuous floating animation or full-page transition blocks interaction.
+
+ReaderName owns adjacent text/check alignment on profiles, posts, community suggestions and the reader directory. ShelvesBadge is a compact inline mark with an accessible administrator label and tooltip; its size follows the name and never becomes a separate text pill. Administrator authority remains server-configured immutable account IDs.

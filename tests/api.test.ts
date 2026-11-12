@@ -1773,10 +1773,13 @@ test("Google Books editions, author filters and public reader directory", async 
     ).json();
     assert.equal(followers.items[0].id, "dir-a");
     assert.deepEqual(Object.keys(followers.items[0]).sort(), [
+      "avatarVersion",
+      "bannerVersion",
       "bio",
       "displayName",
       "following",
       "id",
+      "isAdmin",
       "username",
     ]);
     assert.equal(

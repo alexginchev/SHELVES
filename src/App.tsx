@@ -11,6 +11,7 @@ import { AdminAccounts } from "./AdminAccounts";
 import { SafetySettings, AdminReports } from "./SocialSafety";
 import { ProfileIdentity, ProfileManagement } from "./ProfileIdentity";
 import { CurrentlyReading } from "./CurrentlyReading";
+import { ReaderName } from "./ShelvesBadge";
 import { AuthorPage } from "./AuthorPage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
@@ -555,7 +556,7 @@ export function App() {
           <div
             className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" ? "collection-layout" : ""}`}
           >
-            <section className="feed-column" aria-busy={loading}>
+            <section className="feed-column" aria-busy={loading} key={view}>
               {(view === "terms" || view === "cookies") && (
                 <SiteInformation page={view} />
               )}
@@ -1175,27 +1176,45 @@ export function App() {
                 </section>
               ) : null}
               {!loading && view === "community" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">FIND YOUR PEOPLE</span>
-                  <h2>There is room in the circle.</h2>
-                  <p className="view-intro">
-                    Real readers, shared curiosity, and your next good
-                    conversation.
-                  </p>
-                  <p className="view-intro">
-                    Reader matches use public four- and five-star reviews.
-                  </p>
-                  <div className="account-actions">
-                    {data.user ? (
-                      <a
-                        className="plain-link"
-                        href={`#readers?scope=following&reader=${data.user.id}`}
-                      >
-                        Readers you follow
-                      </a>
-                    ) : null}
-                    <a className="plain-link" href="#readers">
-                      Search readers and explore connections ↗
+                <section className="view-panel community-garden">
+                  <div className="community-intro">
+                    <div>
+                      <span className="section-kicker">FIND YOUR PEOPLE</span>
+                      <h2>Your reading circle</h2>
+                      <p className="view-intro">
+                        Real readers, shared curiosity, and your next good
+                        conversation.
+                      </p>
+                      <p className="view-intro">
+                        Reader matches use public four- and five-star reviews.
+                      </p>
+                      <div className="account-actions">
+                        {data.user ? (
+                          <a
+                            className="plain-link"
+                            href={`#readers?scope=following&reader=${data.user.id}`}
+                          >
+                            Readers you follow
+                          </a>
+                        ) : null}
+                        <a className="plain-link" href="#readers">
+                          Search readers and explore connections ↗
+                        </a>
+                      </div>
+                    </div>
+                    <img
+                      className="reading-garden-art"
+                      src="/art/reading-garden.svg"
+                      width="360"
+                      height="280"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="community-directory-heading">
+                    <h3>Readers to know</h3>
+                    <a href="#lists" className="plain-link">
+                      Explore community book lists ↗
                     </a>
                   </div>
                   {data.readers.map((r) => (
@@ -1210,7 +1229,12 @@ export function App() {
                       />
                       <div className="person-info">
                         <a className="reader-link" href={`#reader/${r.id}`}>
-                          <strong>{r.displayName}</strong>
+                          <strong>
+                            <ReaderName
+                              name={r.displayName}
+                              verified={r.isAdmin}
+                            />
+                          </strong>
                         </a>
                         <small>@{r.username}</small>
                         <p>{r.bio || "A new chapter on Shelves."}</p>
@@ -1446,7 +1470,12 @@ export function App() {
                     />
                     <div className="person-info">
                       <a className="reader-link" href={`#reader/${r.id}`}>
-                        <strong>{r.displayName}</strong>
+                        <strong>
+                          <ReaderName
+                            name={r.displayName}
+                            verified={r.isAdmin}
+                          />
+                        </strong>
                       </a>
                       <small>@{r.username}</small>
                       {r.reason ? (

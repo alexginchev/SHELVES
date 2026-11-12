@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Reader, User } from "../shared/types";
 import { api } from "./api";
 import { Avatar, ErrorMessage, Form } from "./components";
+import { ReaderName } from "./ShelvesBadge";
 type Result = {
   items: Reader[];
   total: number;
@@ -164,10 +165,22 @@ export function ReaderDirectory({
           </p>
           {data.items.map((reader) => (
             <div className="person-row community-row" key={reader.id}>
-              <Avatar name={reader.displayName} />
+              <Avatar
+                name={reader.displayName}
+                src={
+                  reader.avatarVersion
+                    ? `/api/readers/${reader.id}/images/avatar?v=${reader.avatarVersion}`
+                    : undefined
+                }
+              />
               <div className="person-info">
                 <a className="reader-link" href={`#reader/${reader.id}`}>
-                  <strong>{reader.displayName}</strong>
+                  <strong>
+                    <ReaderName
+                      name={reader.displayName}
+                      verified={reader.isAdmin}
+                    />
+                  </strong>
                 </a>
                 <small>@{reader.username}</small>
                 <p>{reader.bio || "A new chapter on Shelves."}</p>

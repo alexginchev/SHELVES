@@ -1,4 +1,6 @@
 import { hiddenReaders } from "./social-safety.ts";
+import { isAdmin } from "./admin.ts";
+import { mediaColumns } from "./profile-media.ts";
 import type { Express } from "express";
 import { z } from "zod";
 import type { Store, Value } from "./store.ts";
@@ -56,13 +58,17 @@ export function readerDirectoryRoutes(app: Express, db: Store) {
     const pages = Math.max(1, Math.ceil(total / 12)),
       page = Math.min(query.page, pages);
     const items = await db.all<Reader>(
-      `SELECT u.id,u.username,u.display_name AS "displayName",u.bio,EXISTS(SELECT 1 FROM follows f WHERE f.user_id=? AND f.followed_id=u.id) AS following FROM users u${where} ORDER BY lower(u.display_name),u.id LIMIT 12 OFFSET ?`,
+      `SELECT u.id,u.username,u.display_name AS "displayName",u.bio,${mediaColumns},EXISTS(SELECT 1 FROM follows f WHERE f.user_id=? AND f.followed_id=u.id) AS following FROM users u${where} ORDER BY lower(u.display_name),u.id LIMIT 12 OFFSET ?`,
       res.locals.user?.id || "",
       ...values,
       (page - 1) * 12,
     );
     res.json({
-      items: items.map((r) => ({ ...r, following: !!r.following })),
+      items: items.map((r) => ({
+        ...r,
+        following: !!r.following,
+        isAdmin: isAdmin(r.id),
+      })),
       total,
       page,
       pages,

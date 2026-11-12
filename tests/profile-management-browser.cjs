@@ -141,7 +141,7 @@ const { auditLayout } = require("./layout.cjs");
     );
     await page.goto(base + "/#home");
     await page
-      .getByRole("heading", { name: "Stories are better when shared." })
+      .getByRole("heading", { name: "Currently reading", exact: true })
       .waitFor();
     assert.equal(await page.locator(".profile-management").count(), 0);
     assert.deepEqual(errors, []);

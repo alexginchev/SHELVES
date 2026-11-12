@@ -1,4 +1,4 @@
-import { ShelvesBadge } from "./ShelvesBadge";
+import { ReaderName } from "./ShelvesBadge";
 import { useState } from "react";
 import type { User, Reader } from "../shared/types";
 import { api } from "./api";
@@ -23,9 +23,7 @@ export function ProfileIdentity({
             alt="Profile banner"
           />
         ) : (
-          <div className="profile-banner-default">
-            <span>A life between the pages.</span>
-          </div>
+          <div className="profile-banner-default" aria-hidden="true" />
         )}
       </div>
       <div className="profile-identity-body">
@@ -41,8 +39,7 @@ export function ProfileIdentity({
         </div>
         <span className="section-kicker">THE READER BEHIND THE BOOKS</span>
         <h2 className="profile-display-name">
-          {reader.displayName}
-          <ShelvesBadge verified={reader.isAdmin} />
+          <ReaderName name={reader.displayName} verified={reader.isAdmin} />
         </h2>
         <p className="profile-handle">@{reader.username}</p>
         <p className="preserve-lines">

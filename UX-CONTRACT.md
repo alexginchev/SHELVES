@@ -213,6 +213,14 @@ App owns private library search/sort/status and shelf CRUD as before. Status but
 
 ### Signed-in home — 12 November 2026
 
+### Watercolor and staff identity — 12 November 2026
+
+ReaderName/ShelvesBadge share administrator-name presentation across profiles, posts, community and directory. Reader directory responses now include public avatar/banner versions and server-derived isAdmin; profile edits cannot set this flag. Server configuration in server/admin.ts remains the role authority. The requested existing @alexginchev account was resolved to its immutable ID and added to the local ignored server configuration; no username-based privilege rule or credentials were committed.
+
+Route changes remount the feed-column animation container. Existing transient page state resets when leaving a route; same-route filters keep their component state. CSS entry/hover transitions are finite, do not block pointer events, and honor reduced motion. Decorative SVG images have empty alt text and local paths. tests/watercolor-browser.cjs verifies community/profile/directory layouts, adjacent badges, directory admin metadata, reduced motion and community-list navigation.
+
+### Signed-in reading behavior
+
 Home shows CurrentlyReading first for authenticated readers and the welcome banner only for visitors. The optional preferences link follows current reading. CurrentlyReading remains the sole owner of progress updates, with sharing off by default and existing validation, error retention and reload persistence. An empty reading list links to Discover and My shelves. tests/home-browser.cjs covers guest separation, first-content placement, empty-state navigation, mobile layouts and private progress save failure/retry/reload.
 
 ### Discovery and header behavior

@@ -2,7 +2,7 @@ import { api } from "./api";
 import { CommentActions } from "./CommentActions";
 import { createPortal } from "react-dom";
 import { ReportButton } from "./SocialSafety";
-import { ShelvesBadge } from "./ShelvesBadge";
+import { ReaderName } from "./ShelvesBadge";
 import {
   useEffect,
   useId,
@@ -372,8 +372,9 @@ export function PostCard({
         />
         <div className="post-author">
           <a className="reader-link" href={`#reader/${post.userId}`}>
-            <strong>{post.displayName}</strong>{" "}
-            <ShelvesBadge verified={post.isAdmin} />
+            <strong>
+              <ReaderName name={post.displayName} verified={post.isAdmin} />
+            </strong>
           </a>
           <small>
             @{post.username} · {new Date(post.createdAt).toLocaleDateString()}
