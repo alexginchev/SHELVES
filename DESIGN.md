@@ -182,3 +182,7 @@ Local SVG artwork in public/art supplies seamless grain and a small book-and-pla
 Route content uses a 300ms, 8px upward arrival with restrained 35/65ms staggering. Dialog and search panels use 180ms entry, and pointer-hover book covers lift 4px. All motion is finite and disabled by the existing global prefers-reduced-motion rule. No continuous floating animation or full-page transition blocks interaction.
 
 ReaderName owns adjacent text/check alignment on profiles, posts, community suggestions and the reader directory. ShelvesBadge is a compact inline mark with an accessible administrator label and tooltip; its size follows the name and never becomes a separate text pill. Administrator authority remains server-configured immutable account IDs.
+
+List summaries now pair up to three tilted cover previews with title, visibility, count and creator metadata on a lightly textured sage surface. Empty lists reuse the book-and-plant illustration. The title's native link covers the whole summary, with an explicit card-level keyboard outline. Covers stack above the copy on narrow screens.
+
+Browser identity uses a static square stacked-book SVG and generated PNG variants; the full animated wordmark remains in page branding. The manifest supplies standalone-window name, theme and icons without promising offline behavior or installing anything automatically.

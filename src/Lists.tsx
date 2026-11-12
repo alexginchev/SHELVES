@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Book, BookList, User } from "../shared/types";
 import { api, json } from "./api";
-import { BookCard, Dialog, ErrorMessage, Form } from "./components";
+import { BookCard, Cover, Dialog, ErrorMessage, Form } from "./components";
 import { ListBookPicker } from "./ListBookPicker";
 import { PageNavigation, useNumberedPage } from "./NumberedPages";
 import { ListDiscussion } from "./ListDiscussion";
@@ -185,17 +185,34 @@ export function Lists({
           <div className="list-collection">
             {browsing.data?.items.map((item) => (
               <article className="list-summary" key={item.id}>
-                <span className="section-kicker">
-                  {item.visibility} · {item.books.length} books
-                </span>
-                <h3>
-                  <a href={`#list/${item.id}`}>{item.title}</a>
-                </h3>
-                <p>
-                  {item.description ||
-                    "A collection of stories worth keeping together."}
-                </p>
-                <small>Collected by {item.displayName}</small>
+                <div className="list-jackets" aria-hidden="true">
+                  {item.books.length ? (
+                    item.books
+                      .slice(0, 3)
+                      .map((book) => <Cover key={book.id} book={book} small />)
+                  ) : (
+                    <img
+                      className="list-art"
+                      src="/art/reading-garden.svg"
+                      alt=""
+                      width="180"
+                      height="140"
+                    />
+                  )}
+                </div>
+                <div className="list-summary-copy">
+                  <span className="section-kicker">
+                    {item.visibility} · {item.books.length} books
+                  </span>
+                  <h3>
+                    <a href={`#list/${item.id}`}>{item.title}</a>
+                  </h3>
+                  <p>
+                    {item.description ||
+                      "A collection of stories worth keeping together."}
+                  </p>
+                  <small>Collected by {item.displayName}</small>
+                </div>
               </article>
             ))}
             {browsing.data?.total === 0 ? (

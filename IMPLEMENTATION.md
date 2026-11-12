@@ -218,6 +218,12 @@ Verification: 23 API/SQLite tests passed, one hosted-only migration check skippe
 Edition browser checks also passed: paging, language reload/filtering, distinct-edition saves, desktop/mobile layouts and live-search language. Restarted the local development server with the updated integration.
 
 
+## 12 November 2026 — List artwork and browser/app icons
+
+Added a static SVG browser favicon using the supplied stacked-book mark, PNG fallbacks at 32/180/192/512 pixels and a standalone web manifest. These provide browser-tab, touch and app-shortcut identity; no installation or offline behavior is claimed. Added textured list-summary cards with up to three real cover previews and decorative artwork for empty collections. Native list links cover the cards while preserving keyboard and modified-click behavior.
+
+Validation: build/typecheck, formatting and strict UI audit passed; 23 API tests passed with one hosted migration test skipped. Full browser suite passed 66 route/viewport checks. Focused list workflows and list-design/icon checks passed, including 1477/390/320px layouts, keyboard navigation, empty artwork, served manifest and exact PNG dimensions. Visually reviewed cards and icon. Confirmed live SVG and manifest HTTP 200.
+
 ## 12 November 2026 — Watercolor visuals, transitions and administrator identity
 
 Added local grain and book/plant SVG artwork to page materials, the reading-circle introduction and default profile banner. Added finite route/panel arrivals and cover-hover lift with reduced-motion support. ReaderName now keeps a compact accessible admin check beside names across profiles, posts, recommendations and directory results. The directory now includes public profile-image versions and server-derived admin status, and renders uploaded portraits. Added a direct community-list link.

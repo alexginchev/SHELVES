@@ -1743,10 +1743,73 @@ body:has(dialog[open]) {
   margin-top: 24px;
 }
 .list-summary {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 20px;
   min-width: 0;
+  background:
+    url("/art/paper-grain.svg"), linear-gradient(120deg, #e3e9dc66, #fffdf8aa);
+}
+.list-summary-copy {
+  min-width: 0;
+}
+.list-summary h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+}
+.list-summary:has(a:focus-visible) {
+  outline: 3px solid var(--coral);
+  outline-offset: 3px;
+}
+.list-summary:has(a:hover) {
+  border-color: var(--sage);
+}
+.list-jackets {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  min-height: 130px;
+  padding: 12px 4px;
+}
+.list-jackets .real-cover,
+.list-jackets .paper-cover {
+  width: 64px;
+  height: 96px;
+  min-width: 0;
+  margin: 0;
+  flex: 0 1 64px;
+  object-fit: cover;
+}
+.list-jackets > :nth-child(1):not(.list-art) {
+  transform: rotate(-6deg) translateY(4px);
+}
+.list-jackets > :nth-child(2) {
+  transform: translateY(-4px);
+  z-index: 1;
+}
+.list-jackets > :nth-child(3) {
+  transform: rotate(6deg) translateY(4px);
+}
+.list-jackets .list-art {
+  width: 160px;
+  height: 124px;
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .list-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .list-jackets {
+    justify-content: flex-start;
+  }
 }
 .list-summary p {
   overflow-wrap: anywhere;

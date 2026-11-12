@@ -225,6 +225,8 @@ Home shows CurrentlyReading first for authenticated readers and the welcome bann
 
 ### Discovery and header behavior
 
+List preview artwork is decorative and never changes list visibility or exposes books outside the server-authorized response. The native title link covers the card and preserves modified-click navigation. List editing/deletion remains on the detail page. Icon links and manifest describe browser-tab/touch/app-shortcut identity; no service worker or offline cache is introduced. tests/list-design-browser.cjs verifies populated/empty artwork, keyboard navigation, narrow layouts and declared icon dimensions.
+
 Discover and home recommendations use the shared collection-books variant. Discover's existing query, language, IME, cancellation, provider notices and retry behavior are unchanged. Advanced genre/year filtering remains in Catalog. BookCard still owns native card links and the independent Not interested action. Site identity browser checks include full-width Discover and home at 1477/390/320px, including failed-cover fallback and legal-route navigation.
 
 HeaderSearch owns transient query, language, page and popup state independently of Discover. Typing never navigates. Queries require two characters, debounce for 300ms, pause during IME composition, cancel superseded requests and time out after 15 seconds. Enter and pagination request immediately. Loading, empty, provider fallback and retry states stay within the popup. Escape/Close restore input focus; outside interaction and route changes dismiss it. Arrow keys move among native result links; selecting a result opens its book route. No search state is written to the URL.
