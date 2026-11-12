@@ -124,8 +124,9 @@ const { auditLayout } = require("./layout.cjs");
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${base}/#home`);
     await page
-      .getByRole("heading", { name: "Stories are better when shared." })
+      .getByRole("heading", { name: "Currently reading", exact: true })
       .waitFor();
+    assert.equal(await page.locator(".welcome-card").count(), 0);
     assert.equal(
       await page
         .getByRole("link", { name: "Choose reading preferences ↗" })

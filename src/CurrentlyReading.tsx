@@ -13,8 +13,15 @@ export function CurrentlyReading({
   const books = records.filter((r) => r.status === "Currently reading");
   return (
     <section className="view-panel current-reading">
-      <span className="section-kicker">ONE PAGE AT A TIME</span>
-      <h2>Currently reading</h2>
+      <div className="collection-heading">
+        <h2>Currently reading</h2>
+        <a className="plain-link" href="#shelves">
+          Open my shelves ↗
+        </a>
+      </div>
+      <p className="reading-privacy">
+        Your place in each book. Progress stays private unless you share it.
+      </p>
       {books.length ? (
         books.map((record) => (
           <div className="current-reading-book" key={record.bookId}>
@@ -45,12 +52,20 @@ export function CurrentlyReading({
           </div>
         ))
       ) : (
-        <p>
-          Your next chapter starts with a book.{" "}
-          <a className="plain-link" href="#shelves">
-            Open my shelves
-          </a>
-        </p>
+        <div className="reading-start">
+          <h3>What are you reading?</h3>
+          <p>
+            Open a book and choose Currently reading to track your place here.
+          </p>
+          <div className="account-actions">
+            <a className="primary-btn" href="#discover">
+              Find a book
+            </a>
+            <a className="plain-link" href="#shelves">
+              Choose from my shelves
+            </a>
+          </div>
+        </div>
       )}
       {selected ? (
         <ProgressDialog

@@ -170,7 +170,7 @@ Discover now shares this collection layout: full-width covers, a compact title/s
 
 ### Next design priorities
 
-- Signed-in home: prioritize current reading, quick progress updates and recent community activity over the guest welcome illustration. Preserve the guest introduction separately.
+- Signed-in home now prioritizes current reading and progress updates; the welcome illustration is reserved for visitors. The optional preferences reminder is a compact line after current reading. Empty reading state offers discovery and existing shelves rather than another promotional banner.
 - Author identity: verified biography, portrait and source attribution require a reliable author record and identity matching, not inference from credited names.
 - Editions: offer a work-level browsing view only once grouping reliably distinguishes translations, editions and same-title books; keep existing edition-specific records intact.
 - Mobile navigation: consolidate secondary links into an accessible menu to bring content closer to the top; preserve keyboard access and all current destinations.

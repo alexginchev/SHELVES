@@ -218,6 +218,12 @@ Verification: 23 API/SQLite tests passed, one hosted-only migration check skippe
 Edition browser checks also passed: paging, language reload/filtering, distinct-edition saves, desktop/mobile layouts and live-search language. Restarted the local development server with the updated integration.
 
 
+## 12 November 2026 — Reading-first signed-in home
+
+Home now opens with CurrentlyReading for authenticated readers, retaining the illustrated welcome only for visitors. Reused the existing progress dialog and private-by-default sharing behavior. Added a useful empty state linking to discovery and saved shelves, reduced the preference prompt to an optional inline reminder, and hide the recommendations section when there are no picks.
+
+Verification: production build/typecheck, formatting and strict UI audit passed; API tests passed 23 checks with one hosted migration check skipped. The full browser suite passed 66 route/viewport checks. The focused Home test covers guest separation, empty-state navigation, reading-first content order, 1477/390/320px layouts and private progress failure/retry/reload. Reviewed desktop/mobile screenshots. Started the local development server for review.
+
 ## 11 November 2026 — Discover and home design refinement
 
 Extended the shared collection layout to Discover with full-width covers and a compact search/language toolbar. Simplified home recommendations to a cover-led section with one browse link, removed the unrelated quotation from the rotating book pick, and removed empty feed-pagination spacing. Existing provider search states, language filters, card navigation and dismissal behavior remain. Recorded further design priorities in DESIGN.md: useful signed-in home, verified author identity, reliable work/edition grouping and compact mobile secondary navigation.

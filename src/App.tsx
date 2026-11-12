@@ -616,24 +616,6 @@ export function App() {
                   onSaved={refresh}
                 />
               ) : null}
-              {!loading &&
-              view === "home" &&
-              data.user &&
-              !data.preferencesCompleted ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    A LITTLE ABOUT YOUR TASTE
-                  </span>
-                  <h2>Find stories that feel like you.</h2>
-                  <p>
-                    Choose your favorite genres for a more personal starting
-                    point.
-                  </p>
-                  <a className="plain-link" href="#preferences">
-                    Choose reading preferences ↗
-                  </a>
-                </section>
-              ) : null}
               {!loading && view === "notifications" ? (
                 data.user ? (
                   <Notifications
@@ -716,53 +698,65 @@ export function App() {
               ) : null}
               {!loading && view === "home" ? (
                 <>
-                  <section className="welcome-card">
-                    <div className="welcome-copy">
-                      <span className="eyebrow-pill">✦ YOUR DAILY PAGE</span>
-                      <h2>
-                        Stories are better
-                        <br />
-                        when <em>shared.</em>
-                      </h2>
-                      <p>
-                        A little inspiration for your reading life, one page at
-                        a time.
-                      </p>
-                      <button
-                        className="primary-btn"
-                        onClick={() =>
-                          data.user ? navigate("profile") : setAuth(true)
-                        }
-                      >
-                        {data.user
-                          ? "Set a reading goal"
-                          : "Start your reading story"}{" "}
-                        <span>↗</span>
-                      </button>
-                    </div>
-                    <div className="welcome-art" aria-hidden="true">
-                      <div className="art-sun" />
-                      <div className="art-leaf leaf-one" />
-                      <div className="art-leaf leaf-two" />
-                      <div className="art-book book-back" />
-                      <div className="art-book book-mid" />
-                      <div className="art-book book-front">
-                        <span>
-                          THE
+                  {data.user ? (
+                    <>
+                      <CurrentlyReading
+                        records={data.library}
+                        onSaved={saved}
+                      />
+                      {!data.preferencesCompleted ? (
+                        <aside className="reading-preferences-reminder">
+                          <p>Make your recommendations more personal.</p>
+                          <a className="plain-link" href="#preferences">
+                            Choose reading preferences ↗
+                          </a>
+                        </aside>
+                      ) : null}
+                    </>
+                  ) : (
+                    <section className="welcome-card">
+                      <div className="welcome-copy">
+                        <span className="eyebrow-pill">✦ YOUR DAILY PAGE</span>
+                        <h2>
+                          Stories are better
                           <br />
-                          QUIET
-                          <br />
-                          WILD
-                        </span>
+                          when <em>shared.</em>
+                        </h2>
+                        <p>
+                          A little inspiration for your reading life, one page
+                          at a time.
+                        </p>
+                        <button
+                          className="primary-btn"
+                          onClick={() => setAuth(true)}
+                        >
+                          Start your reading story <span>↗</span>
+                        </button>
                       </div>
-                      <div className="art-mug">
-                        <span>〰</span>
+                      <div className="welcome-art" aria-hidden="true">
+                        <div className="art-sun" />
+                        <div className="art-leaf leaf-one" />
+                        <div className="art-leaf leaf-two" />
+                        <div className="art-book book-back" />
+                        <div className="art-book book-mid" />
+                        <div className="art-book book-front">
+                          <span>
+                            THE
+                            <br />
+                            QUIET
+                            <br />
+                            WILD
+                          </span>
+                        </div>
+                        <div className="art-mug">
+                          <span>〰</span>
+                        </div>
+                        <div className="art-steam">⌁</div>
+                        <div className="art-ground" />
                       </div>
-                      <div className="art-steam">⌁</div>
-                      <div className="art-ground" />
-                    </div>
-                    <span className="welcome-doodle">✳</span>
-                  </section>
+                      <span className="welcome-doodle">✳</span>
+                    </section>
+                  )}
                   <section className="compose-card">
                     <div className="compose-top">
                       <Avatar
@@ -790,9 +784,6 @@ export function App() {
                       </button>
                     </div>
                   </section>
-                  {data.user ? (
-                    <CurrentlyReading records={data.library} onSaved={saved} />
-                  ) : null}
                   <div className="feed-heading">
                     <div>
                       <span className="section-kicker">
@@ -882,24 +873,26 @@ export function App() {
                       </section>
                     ) : null}
                   </div>
-                  <section className="view-panel home-recommendations">
-                    <div className="collection-heading">
-                      <h2>Next on your shelf</h2>
-                      <a className="plain-link" href="#discover">
-                        Explore all picks ↗
-                      </a>
-                    </div>
-                    <div className="book-grid collection-books">
-                      {data.recommendations.slice(0, 3).map((b) => (
-                        <BookCard
-                          key={b.id}
-                          book={b}
-                          reason={b.reason}
-                          onOpen={openBookPage}
-                        />
-                      ))}
-                    </div>
-                  </section>
+                  {data.recommendations.length > 0 ? (
+                    <section className="view-panel home-recommendations">
+                      <div className="collection-heading">
+                        <h2>Next on your shelf</h2>
+                        <a className="plain-link" href="#discover">
+                          Explore all picks ↗
+                        </a>
+                      </div>
+                      <div className="book-grid collection-books">
+                        {data.recommendations.slice(0, 3).map((b) => (
+                          <BookCard
+                            key={b.id}
+                            book={b}
+                            reason={b.reason}
+                            onOpen={openBookPage}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
                 </>
               ) : null}
               {!loading && view === "readers" ? (
