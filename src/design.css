@@ -104,4 +104,183 @@
   .profile-workspace > .profile-management {
     @apply min-w-0;
   }
+  .social-home {
+    grid-template-columns: minmax(0, 760px) minmax(220px, 290px);
+    justify-content: center;
+  }
+  .home-shortcuts {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .home-shortcuts a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--ink);
+  }
+  .home-shortcuts svg {
+    width: 20px;
+    height: 20px;
+  }
+  .social-home .feed-column {
+    gap: 16px;
+  }
+  .home-reading-strip {
+    @apply border-0 border-b border-solid border-line pb-3;
+  }
+  .home-reading-strip > summary {
+    @apply flex cursor-pointer items-center gap-3 text-sm;
+    min-height: 44px;
+    list-style: none;
+  }
+  .home-reading-strip > summary::-webkit-details-marker {
+    display: none;
+  }
+  .home-reading-strip summary b {
+    @apply ml-auto text-muted;
+  }
+  .home-reading-strip .current-reading {
+    @apply mt-4;
+  }
+  .home-icon-button {
+    @apply inline-flex shrink-0 items-center justify-center rounded-full border border-solid border-line bg-surface text-ink;
+    width: 44px;
+    height: 44px;
+  }
+  .home-icon-button:hover {
+    @apply bg-paper;
+  }
+  .home-icon-button:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 3px;
+  }
+  .social-home svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .social-home .compose-card {
+    @apply flex items-center gap-3 rounded-2xl p-4;
+  }
+  .social-home .compose-top {
+    @apply min-w-0 flex-1;
+  }
+  .social-home .compose-placeholder {
+    @apply min-w-0 border-0 bg-transparent p-0 text-sm;
+  }
+  .home-feed-toolbar {
+    @apply flex items-center justify-between gap-2 border-0 border-b border-solid border-line;
+  }
+  .home-feed-toolbar .feed-filters {
+    @apply flex min-w-0 gap-0 rounded-none bg-transparent p-0;
+  }
+  .home-feed-toolbar .filter-btn {
+    @apply flex items-center justify-center gap-2 rounded-none border-0 border-b-2 border-solid border-transparent px-3 py-4 text-sm;
+    box-shadow: none;
+  }
+  .home-feed-toolbar .filter-btn.active {
+    @apply border-ink bg-transparent text-ink;
+  }
+  .feed-explanation {
+    @apply text-xs text-muted;
+  }
+  .feed-explanation summary {
+    @apply flex cursor-pointer items-center gap-2;
+    width: fit-content;
+    min-height: 30px;
+  }
+  .feed-explanation summary svg {
+    width: 15px;
+    height: 15px;
+  }
+  .feed-explanation p {
+    @apply max-w-xl leading-relaxed;
+  }
+  .social-home .post-card {
+    @apply rounded-none border-0 border-b border-solid border-line bg-transparent px-1 py-6;
+    box-shadow: none;
+  }
+  .social-home .feed-list {
+    gap: 0;
+  }
+  .post-feed-reason {
+    @apply mt-0 mb-4 flex items-center gap-2 text-xs text-muted;
+  }
+  .post-feed-reason svg {
+    width: 14px;
+    height: 14px;
+  }
+  .social-post .post-copy {
+    @apply text-base leading-relaxed;
+  }
+  .post-conversation {
+    @apply my-4 text-sm;
+  }
+  .post-conversation > summary {
+    @apply cursor-pointer text-muted;
+    min-height: 32px;
+  }
+  .social-post .post-actions {
+    @apply gap-5;
+  }
+  .social-post .post-actions > button {
+    min-height: 44px;
+  }
+  .social-post .comment-btn {
+    @apply inline-flex items-center gap-2;
+  }
+  .social-home .people-card {
+    @apply border-0 bg-transparent p-0;
+    box-shadow: none;
+  }
+  .social-home .people-card h3 {
+    @apply mt-1 mb-5 text-xl;
+  }
+  .social-home .people-card .full-width {
+    @apply flex items-center justify-center gap-2 border-0 text-sm;
+  }
+  .social-home .reader-match {
+    @apply text-xs;
+  }
+  .social-home .empty-state {
+    @apply border-0 bg-transparent px-2 py-8;
+    box-shadow: none;
+  }
+  .social-home .empty-state .section-kicker {
+    display: none;
+  }
+  @media (max-width: 1100px) {
+    .social-home {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .social-home .right-rail {
+      display: none;
+    }
+  }
+  @media (max-width: 600px) {
+    .home-feed-toolbar .filter-btn {
+      @apply gap-1 px-0 text-xs;
+      flex-direction: column;
+      font-size: 10px;
+    }
+    .home-feed-toolbar .feed-filters {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .social-home .compose-card {
+      @apply gap-2 px-3;
+    }
+    .social-home .compose-top {
+      gap: 10px;
+    }
+    .social-home .compose-top .avatar {
+      width: 32px;
+      height: 32px;
+    }
+  }
 }

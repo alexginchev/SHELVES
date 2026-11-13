@@ -170,7 +170,7 @@ Discover now shares this collection layout: full-width covers, a compact title/s
 
 ### Next design priorities
 
-- Signed-in home now prioritizes current reading and progress updates; the welcome illustration is reserved for visitors. The optional preferences reminder is a compact line after current reading. Empty reading state offers discovery and existing shelves rather than another promotional banner.
+- Home now prioritizes public conversations. Current reading stays in a collapsed nightstand strip, with the existing progress dialog inside. The welcome illustration remains for visitors; reading preferences remain in account settings.
 - Author identity: verified biography, portrait and source attribution require a reliable author record and identity matching, not inference from credited names.
 - Editions: offer a work-level browsing view only once grouping reliably distinguishes translations, editions and same-title books; keep existing edition-specific records intact.
 - Mobile navigation: consolidate secondary links into an accessible menu to bring content closer to the top; preserve keyboard access and all current destinations.
@@ -191,3 +191,8 @@ Browser identity uses a static square stacked-book SVG and generated PNG variant
 ## Tailwind profile refinement — 12 November 2026
 
 Tailwind v4 utilities and shared component rules refine the existing watercolor/editorial identity. This is an incremental migration, not a replacement of all legacy CSS. Shared actions have quieter rounded corners and panels softer shadows. Self and public profiles use the collection-width shell without unrelated right-rail recommendations. The self profile separates reading/activity from private settings at 1200px and stacks them on mobile. The team label stacks below the name on narrow screens. ShelvesBadge uses a symmetrical circular check; the accessible administrator label and server authority stay unchanged.
+
+
+## Social Home — 13 November 2026
+
+Home keeps the paper palette and restrained serif header, with a compact composer, four icon-and-label feed tabs and border-separated posts. Current reading is an expandable nightstand strip. Removed the book recommendation grid, goal widget and daily book pick from Home; desktop retains a quiet reader-suggestions column. Mobile secondary destinations use named SVG icon links. Like, comment and report controls use accessible SVG icons; comments expand inside each post. Other routes retain their established controls.

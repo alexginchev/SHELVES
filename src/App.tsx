@@ -374,7 +374,7 @@ export function App() {
     finished = data.stats?.finished || 0,
     pct = Math.min(100, Math.round((finished / goal) * 100));
   const feedPage = usePagedFeed(
-    filter,
+    view === "home" && filter === "all" ? "for-you" : filter,
     revision,
     view === "home" || view === "community",
     undefined,
@@ -540,10 +540,27 @@ export function App() {
               )}
             </div>
           </header>
-          <nav className="mobile-secondary" aria-label="More navigation">
-            <a href="#community">Reading circle</a>
-            <a href="#journal">Reading journal</a>
-            <a href="#lists">Book lists</a>
+          <nav
+            className={`mobile-secondary ${view === "home" ? "home-shortcuts" : ""}`}
+            aria-label="More navigation"
+          >
+            <a
+              href="#community"
+              aria-label="Reading circle"
+              title="Reading circle"
+            >
+              {view === "home" ? <Icon name="community" /> : "Reading circle"}
+            </a>
+            <a
+              href="#journal"
+              aria-label="Reading journal"
+              title="Reading journal"
+            >
+              {view === "home" ? <Icon name="journal" /> : "Reading journal"}
+            </a>
+            <a href="#lists" aria-label="Book lists" title="Book lists">
+              {view === "home" ? <Icon name="shelves" /> : "Book lists"}
+            </a>
           </nav>
           {error ? (
             <div className="load-error" role="alert">
@@ -554,7 +571,7 @@ export function App() {
             </div>
           ) : null}
           <div
-            className={`content-grid ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" ? "collection-layout" : ""}`}
+            className={`content-grid ${view === "home" ? "social-home" : ""} ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" ? "collection-layout" : ""}`}
           >
             <section className="feed-column" aria-busy={loading} key={view}>
               {(view === "terms" || view === "cookies") && (
@@ -700,20 +717,24 @@ export function App() {
               {!loading && view === "home" ? (
                 <>
                   {data.user ? (
-                    <>
+                    <details className="home-reading-strip">
+                      <summary>
+                        <Icon name="shelves" />
+                        <span>On your nightstand</span>
+                        <b>
+                          {
+                            data.library.filter(
+                              (r) => r.status === "Currently reading",
+                            ).length
+                          }
+                        </b>
+                        <Icon name="chevron" />
+                      </summary>
                       <CurrentlyReading
                         records={data.library}
                         onSaved={saved}
                       />
-                      {!data.preferencesCompleted ? (
-                        <aside className="reading-preferences-reminder">
-                          <p>Make your recommendations more personal.</p>
-                          <a className="plain-link" href="#preferences">
-                            Choose reading preferences ↗
-                          </a>
-                        </aside>
-                      ) : null}
-                    </>
+                    </details>
                   ) : (
                     <section className="welcome-card">
                       <div className="welcome-copy">
@@ -776,44 +797,60 @@ export function App() {
                         {data.user ? `, ${username.split(" ")[0]}` : ""}?
                       </button>
                     </div>
-                    <div className="compose-bottom">
-                      <span className="compose-hint">
-                        A thought, a quote, a story worth sharing.
-                      </span>
-                      <button className="outline-btn" onClick={startPost}>
-                        Create post ↗
-                      </button>
-                    </div>
+                    <button
+                      className="home-icon-button compose-send"
+                      onClick={startPost}
+                      aria-label="Create post"
+                      title="Create post"
+                    >
+                      <Icon name="journal" />
+                    </button>
                   </section>
-                  <div className="feed-heading">
-                    <div>
-                      <span className="section-kicker">
-                        FROM YOUR COMMUNITY
-                      </span>
-                      <h2>
-                        The reading room <span>✳</span>
-                      </h2>
-                    </div>
-                    <div className="feed-filters">
+                  <div className="home-feed-toolbar">
+                    <div className="feed-filters" aria-label="Feed selection">
                       {[
-                        ["all", "For you"],
-                        ["following", "Following"],
-                        ["reviews", "Reviews"],
-                      ].map(([key, label]) => (
+                        ["all", "For you", "sparkles"],
+                        ["following", "Following", "community"],
+                        ["latest", "Latest", "clock"],
+                        ["reviews", "Reviews", "star"],
+                      ].map(([key, label, icon]) => (
                         <button
                           key={key}
                           className={`filter-btn ${filter === key ? "active" : ""}`}
                           onClick={() => setFilter(key)}
                           aria-pressed={filter === key}
                         >
-                          {label}
+                          <Icon name={icon} />
+                          <span>{label}</span>
                         </button>
                       ))}
                     </div>
+                    <button
+                      className="home-icon-button"
+                      aria-label="Refresh feed"
+                      title="Refresh feed"
+                      disabled={feedPage.busy}
+                      onClick={() => setRevision((v) => v + 1)}
+                    >
+                      <Icon name="refresh" />
+                    </button>
                   </div>
+                  <details className="feed-explanation">
+                    <summary>
+                      <Icon name="info" />
+                      <span>How your feed works</span>
+                    </summary>
+                    <p>
+                      For you balances recent conversations, people you follow
+                      and books or genres you�ve publicly reviewed highly.
+                      Private notes and reading progress are never used. Latest
+                      shows posts in date order.
+                    </p>
+                  </details>
                   <div className="feed-list">
                     {visiblePosts.map((p) => (
                       <PostCard
+                        compact
                         key={p.id}
                         post={p}
                         user={data.user}
@@ -874,26 +911,6 @@ export function App() {
                       </section>
                     ) : null}
                   </div>
-                  {data.recommendations.length > 0 ? (
-                    <section className="view-panel home-recommendations">
-                      <div className="collection-heading">
-                        <h2>Next on your shelf</h2>
-                        <a className="plain-link" href="#discover">
-                          Explore all picks ↗
-                        </a>
-                      </div>
-                      <div className="book-grid collection-books">
-                        {data.recommendations.slice(0, 3).map((b) => (
-                          <BookCard
-                            key={b.id}
-                            book={b}
-                            reason={b.reason}
-                            onOpen={openBookPage}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  ) : null}
                 </>
               ) : null}
               {!loading && view === "readers" ? (
@@ -1406,7 +1423,7 @@ export function App() {
               ) : null}
             </section>
             <aside className="right-rail">
-              {spotlight ? (
+              {spotlight && view !== "home" ? (
                 <section className="rail-card book-pick-card">
                   <span className="section-kicker">A LITTLE INSPIRATION</span>
                   <h3>Today's book nook</h3>
@@ -1428,44 +1445,51 @@ export function App() {
                   </div>
                 </section>
               ) : null}
-              <section className="rail-card goal-card">
-                <div className="rail-heading">
-                  <div>
-                    <span className="section-kicker">
-                      YOUR {new Date().getFullYear()} JOURNEY
-                    </span>
-                    <h3>Pages in progress</h3>
+              {view !== "home" ? (
+                <section className="rail-card goal-card">
+                  <div className="rail-heading">
+                    <div>
+                      <span className="section-kicker">
+                        YOUR {new Date().getFullYear()} JOURNEY
+                      </span>
+                      <h3>Pages in progress</h3>
+                    </div>
+                    <button
+                      className="plain-arrow"
+                      aria-label="Edit reading goal"
+                      onClick={() =>
+                        data.user ? navigate("profile") : setAuth(true)
+                      }
+                    >
+                      ↗
+                    </button>
                   </div>
-                  <button
-                    className="plain-arrow"
-                    aria-label="Edit reading goal"
-                    onClick={() =>
-                      data.user ? navigate("profile") : setAuth(true)
-                    }
-                  >
-                    ↗
-                  </button>
-                </div>
-                <div className="goal-number">
-                  <strong>{finished}</strong>
-                  <span>of {goal} books</span>
-                  <b className="goal-percent">{pct}%</b>
-                </div>
-                <div className="goal-track">
-                  <span style={{ width: `${pct}%` }} />
-                </div>
-                <div className="goal-caption">
-                  <span>{Math.max(0, goal - finished)} books to go</span>
-                  <span>One page at a time.</span>
-                </div>
-                {!data.user ? (
-                  <button className="plain-link" onClick={() => setAuth(true)}>
-                    Set your own goal ↗
-                  </button>
-                ) : null}
-              </section>
+                  <div className="goal-number">
+                    <strong>{finished}</strong>
+                    <span>of {goal} books</span>
+                    <b className="goal-percent">{pct}%</b>
+                  </div>
+                  <div className="goal-track">
+                    <span style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="goal-caption">
+                    <span>{Math.max(0, goal - finished)} books to go</span>
+                    <span>One page at a time.</span>
+                  </div>
+                  {!data.user ? (
+                    <button
+                      className="plain-link"
+                      onClick={() => setAuth(true)}
+                    >
+                      Set your own goal ↗
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
               <section className="rail-card people-card">
-                <span className="section-kicker">GOOD COMPANY</span>
+                {view !== "home" ? (
+                  <span className="section-kicker">GOOD COMPANY</span>
+                ) : null}
                 <h3>Readers to know</h3>
                 {data.readers.slice(0, 3).map((r) => (
                   <div className="person-row" key={r.id}>
@@ -1520,7 +1544,13 @@ export function App() {
                   className="outline-btn full-width"
                   onClick={() => navigate("community")}
                 >
-                  Explore your reading circle ↗
+                  {view === "home" ? (
+                    <>
+                      <Icon name="community" /> Find readers
+                    </>
+                  ) : (
+                    "Explore your reading circle ↗"
+                  )}
                 </button>
               </section>
             </aside>

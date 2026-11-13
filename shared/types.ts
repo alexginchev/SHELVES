@@ -114,6 +114,7 @@ export type Reading = {
 export type Shelf = { id: string; name: string; count: number };
 export type Recommendation = Book & { reason: string };
 export type Post = {
+  feedReason?: string;
   isAdmin?: boolean;
   avatarVersion?: string | null;
   id: string;

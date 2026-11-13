@@ -75,8 +75,9 @@ const { auditLayout } = require("./layout.cjs");
       .fill("A-secure-test-password");
     await page.getByRole("button", { name: "Create my account" }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.goto(base + "/#settings");
     await page
-      .getByRole("link", { name: "Choose reading preferences ↗" })
+      .getByRole("link", { name: "Reading preferences", exact: true })
       .click();
     await page.getByLabel("Fantasy", { exact: true }).check();
     await page.getByLabel("Classic", { exact: true }).check();
@@ -123,9 +124,7 @@ const { auditLayout } = require("./layout.cjs");
     assert(!(await page.getByLabel("Fantasy", { exact: true }).isChecked()));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${base}/#home`);
-    await page
-      .getByRole("heading", { name: "Currently reading", exact: true })
-      .waitFor();
+    await page.locator(".home-reading-strip > summary").waitFor();
     assert.equal(await page.locator(".welcome-card").count(), 0);
     assert.equal(
       await page
@@ -316,7 +315,7 @@ const { auditLayout } = require("./layout.cjs");
     await page2.getByRole("dialog").waitFor({ state: "hidden" });
     await page2
       .locator(".post-card")
-      .getByRole("button", { name: /appreciations/ })
+      .getByRole("button", { name: /Appreciate post/ })
       .click();
     await page2
       .locator(".post-card .like-btn b")
@@ -324,11 +323,12 @@ const { auditLayout } = require("./layout.cjs");
       .waitFor();
     await page2
       .locator(".post-card")
-      .getByRole("button", { name: "0 notes" })
+      .getByRole("button", { name: "Add a note (0)" })
       .click();
     await page2.getByLabel("Your note").fill("A lovely recommendation.");
     await page2.getByRole("button", { name: "Add note" }).click();
     await page2.getByRole("dialog").waitFor({ state: "hidden" });
+    await page2.locator(".post-conversation > summary").click();
     await page2
       .getByText("A lovely recommendation.", { exact: true })
       .waitFor();

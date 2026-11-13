@@ -221,7 +221,7 @@ Route changes remount the feed-column animation container. Existing transient pa
 
 ### Signed-in reading behavior
 
-Home shows CurrentlyReading first for authenticated readers and the welcome banner only for visitors. The optional preferences link follows current reading. CurrentlyReading remains the sole owner of progress updates, with sharing off by default and existing validation, error retention and reload persistence. An empty reading list links to Discover and My shelves. tests/home-browser.cjs covers guest separation, first-content placement, empty-state navigation, mobile layouts and private progress save failure/retry/reload.
+Home shows an initially collapsed CurrentlyReading disclosure for authenticated readers and the welcome banner only for visitors. Preferences remain accessible from account settings. CurrentlyReading remains the sole owner of progress updates, with sharing off by default and existing validation, error retention and reload persistence. An empty reading list links to Discover and My shelves. tests/home-browser.cjs covers guest separation, first-content placement, empty-state navigation, mobile layouts and private progress save failure/retry/reload.
 
 ### Discovery and header behavior
 
@@ -237,3 +237,12 @@ BrandMark uses the supplied SVG unchanged; BrandLoading uses a derived looping b
 ## Tailwind profile layout
 
 ProfileIdentity remains shared between self/public routes. ProfileManagement appears only on the self profile; desktop settings occupy a separate column, with reading activity first in mobile document order. Upload, error recovery, profile editing, follower links and public wall controls retain their existing owners. The circular verification icon scales with the name and retains its accessible administrator label. Shared Tailwind utilities read the existing paper/ink/sage tokens; reduced-motion and focus rules remain active in the legacy layer.
+
+
+## Ranked social feed — 13 November 2026
+
+Home For you uses server/home-feed.ts, while Latest, Following, Reviews and author walls retain services.feed chronological pagination. Ranking considers up to 200 newest eligible public posts: follows, book/genre affinity from the viewer's public four/five-star reviews, capped likes/comments, recency decay and diminishing repeated-author weight. Private reading records, notes and preferences are not queried. Short reason labels explain the strongest signal; no behavioral tracking is added.
+
+Rank order is stored in a bounded process-local snapshot (128 snapshots, 15-minute lifetime), keyed to the viewer. Pages contain up to 20 posts and recheck deletion, blocks, mutes and suspension before hydration. Engagement changes do not reorder an existing cursor. Expired/evicted snapshots or server restarts return an explicit refresh message; the Home refresh action starts a new order. Multi-instance hosting needs shared snapshot storage or sticky routing. Latest remains available to browse beyond the recent candidate window. Cursor loading/retry and retained-content behavior remain owned by useCursorPages.
+
+Home's compact PostCard variant keeps named like/comment/report controls, collapsed conversations and spoiler protection. The existing progress and reporting dialogs remain canonical. Tests cover populated desktop/390/320 layouts, filter switching, refresh failure/recovery, private progress recovery, cross-viewer cursor rejection, stable pagination after engagement changes, safety rechecks and independence from private ratings.

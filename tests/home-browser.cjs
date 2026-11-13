@@ -41,6 +41,7 @@ const { auditLayout } = require("./layout.cjs");
       200,
     );
     await page.goto(base + "/#home");
+    await page.locator(".home-reading-strip > summary").click();
     await page
       .getByRole("heading", { name: "What are you reading?", exact: true })
       .waitFor();
@@ -65,21 +66,83 @@ const { auditLayout } = require("./layout.cjs");
       ).status(),
       200,
     );
+    const neighbor = await browser.newContext();
+    assert.equal(
+      (
+        await neighbor.request.post(base + "/api/auth/register", {
+          headers: { "X-Shelves-Request": "1" },
+          data: {
+            email: "mira@example.test",
+            username: "mira_reads",
+            displayName: "Mira",
+            password: "test-password-long",
+          },
+        })
+      ).status(),
+      201,
+    );
+    for (const body of [
+      "The Secret Garden feels different on a reread. This time I keep noticing how much of the story is about learning to pay attention.",
+      "Which book made you slow down instead of racing to the last page?",
+    ]) {
+      assert.equal(
+        (
+          await neighbor.request.post(base + "/api/posts", {
+            headers: { "X-Shelves-Request": "1" },
+            data: { kind: "thought", body, bookId: "seed-garden" },
+          })
+        ).status(),
+        201,
+      );
+    }
     for (const width of [1477, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(base + "/#home");
       await page.reload();
+      await page.locator(".home-reading-strip > summary").click();
       await page.locator(".current-reading-book").waitFor();
       const first = await page
         .locator(".feed-column > :first-child")
         .getAttribute("class");
-      assert(first.includes("current-reading"));
+      assert(first.includes("home-reading-strip"));
       await auditLayout(page, "signed-in home " + width);
       await page.screenshot({
         path: `test-results/signed-home-${width}.png`,
         fullPage: true,
       });
+      await page.locator(".home-reading-strip > summary").click();
+      await page.locator(".social-post").first().waitFor();
+      await auditLayout(page, "social home " + width);
+      await page.screenshot({
+        path: `test-results/social-home-${width}.png`,
+        fullPage: true,
+      });
     }
+    await page.getByRole("button", { name: "Latest", exact: true }).click();
+    await page.waitForFunction(
+      () => !document.querySelector(".post-feed-reason"),
+    );
+    await page.getByRole("button", { name: "For you", exact: true }).click();
+    await page.locator(".post-feed-reason").first().waitFor();
+    await page.route("**/api/feed?filter=for-you", (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: "Feed temporarily unavailable." },
+      }),
+    );
+    await page
+      .getByRole("button", { name: "Refresh feed", exact: true })
+      .click();
+    await page
+      .getByText("Feed temporarily unavailable.", { exact: true })
+      .waitFor();
+    assert.equal(await page.locator(".social-post").count(), 2);
+    await page.unroute("**/api/feed?filter=for-you");
+    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    await page
+      .getByText("Feed temporarily unavailable.", { exact: true })
+      .waitFor({ state: "hidden" });
+    await page.locator(".home-reading-strip > summary").click();
     let fail = true;
     await page.route("**/api/library/seed-garden/progress", async (route) => {
       if (fail) {
@@ -116,6 +179,7 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByRole("dialog").waitFor({ state: "hidden" });
     await page.getByText("Page 42 of 288", { exact: true }).waitFor();
     await page.reload();
+    await page.locator(".home-reading-strip > summary").click();
     await page.getByText("Page 42 of 288", { exact: true }).waitFor();
     const guest = await browser.newPage();
     await guest.goto(base + "/#home");

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import type { User } from "../shared/types";
 import { api, json } from "./api";
-import { Dialog, ErrorMessage, Form } from "./components";
+import { Dialog, ErrorMessage, Form, Icon } from "./components";
 
 export function ReportButton({
   kind,
   targetId,
+  compact = false,
 }: {
   kind: "post" | "comment" | "reader" | "list_comment";
   targetId: string;
+  compact?: boolean;
 }) {
   const label = kind === "list_comment" ? "list comment" : kind;
   const [open, setOpen] = useState(false),
@@ -19,12 +21,14 @@ export function ReportButton({
     <>
       <button
         className="plain-link"
+        aria-label={`Report ${label}`}
+        title={compact ? `Report ${label}` : undefined}
         onClick={() => {
           setError("");
           setOpen(true);
         }}
       >
-        Report {label}
+        {compact ? <Icon name="flag" /> : `Report ${label}`}
       </button>
       {open ? (
         <Dialog

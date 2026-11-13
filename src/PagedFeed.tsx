@@ -12,7 +12,9 @@ export function usePagedFeed(
   const base =
     "/feed?filter=" +
     encodeURIComponent(
-      ["all", "following", "reviews"].includes(filter) ? filter : "all",
+      ["all", "following", "reviews", "for-you"].includes(filter)
+        ? filter
+        : "all",
     ) +
     (author ? "&author=" + encodeURIComponent(author) : "");
   return useCursorPages(base, revision, empty, enabled, viewerId);
@@ -21,7 +23,7 @@ export function FeedMore({ feed }: { feed: ReturnType<typeof usePagedFeed> }) {
   return (
     <ActivityMore
       activity={feed}
-      moreLabel="Load older posts"
+      moreLabel="Load more posts"
       loadingLabel="Loading posts…"
       endLabel="You’re up to date with this feed."
     />

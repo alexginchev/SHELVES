@@ -252,12 +252,18 @@ export async function feed(
     sort?: "recent" | "appreciated";
     followedOnly?: boolean;
     reviews?: boolean;
+    ids?: string[];
     limit: number;
   },
 ): Promise<Post[]> {
   const conditions: string[] = [],
     values: (string | number)[] = [];
   const likeCount = "(SELECT count(*) FROM post_likes l WHERE l.post_id=p.id)";
+  if (paging?.ids) {
+    if (!paging.ids.length) return [];
+    conditions.push(`p.id IN (${paging.ids.map(() => "?").join(",")})`);
+    values.push(...paging.ids);
+  }
   const hidden = await hiddenReaders(db, userId);
   if (hidden.length) {
     conditions.push(`p.user_id NOT IN (${hidden.map(() => "?").join(",")})`);

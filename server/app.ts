@@ -1,4 +1,5 @@
 import { editionRoutes } from "./editions.ts";
+import { createHomeFeed } from "./home-feed.ts";
 import { languageExpression, languageSchema } from "./book-language.ts";
 import { safetyRoutes, assertInteraction } from "./social-safety.ts";
 import { profileMediaRoutes } from "./profile-media.ts";
@@ -90,6 +91,7 @@ function decodeActivityCursor(
 }
 export function createApp(db: Store) {
   const app = express();
+  const homeFeed = createHomeFeed(db);
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -515,12 +517,22 @@ export function createApp(db: Store) {
   app.get("/api/feed", async (req, res) => {
     const query = z
       .object({
-        filter: z.enum(["all", "following", "reviews"]).default("all"),
+        filter: z
+          .enum(["all", "following", "reviews", "for-you"])
+          .default("all"),
         following: z.enum(["true", "false"]).optional(),
         author: z.string().min(1).max(80).optional(),
         before: z.string().max(500).optional(),
       })
       .parse(req.query);
+    if (
+      query.filter === "for-you" &&
+      !query.author &&
+      query.following !== "true"
+    ) {
+      res.json(await homeFeed(res.locals.user?.id, query.before));
+      return;
+    }
     const before = decodeActivityCursor(query.before);
     const items = await feed(
       db,

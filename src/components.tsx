@@ -54,6 +54,32 @@ export function Icon({ name }: { name: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    flag: <path d="M5 21V3c5-3 9 3 14 0v10c-5 3-9-3-14 0" />,
+    chevron: <path d="m8 10 4 4 4-4" />,
+    comment: <path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a9 9 0 0 1 19 0Z" />,
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+    refresh: (
+      <>
+        <path d="M20 7v5h-5M4 17v-5h5M20 12a8 8 0 0 0-14-5M4 12a8 8 0 0 0 14 5" />
+      </>
+    ),
+    info: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 11v6M12 7h.01" />
+      </>
+    ),
+    star: (
+      <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z" />
+    ),
+    sparkles: (
+      <path d="m10 3 2.4 6.6L19 12l-6.6 2.4L10 21l-2.4-6.6L1 12l6.6-2.4ZM20 2v5M17.5 4.5h5" />
+    ),
     heart: <path d="M20 5c-4-4-8 1-8 1S8 1 4 5c-5 5 8 15 8 15s13-10 8-15Z" />,
   };
   return (
@@ -257,6 +283,7 @@ export function PostCard({
   onComment,
   onDelete,
   onEdit,
+  compact = false,
 }: {
   post: Post;
   user: User | null;
@@ -264,6 +291,7 @@ export function PostCard({
   onComment: (p: Post) => void;
   onDelete: (p: Post) => void;
   onEdit?: (p: Post) => void;
+  compact?: boolean;
 }) {
   const [comments, setComments] = useState(post.comments);
   const [nextComments, setNextComments] = useState(post.commentsCursor),
@@ -323,11 +351,8 @@ export function PostCard({
       }
     }
   }
-  const content = (
+  const conversation = (
     <>
-      <p className={`post-copy ${post.kind === "quote" ? "quote-copy" : ""}`}>
-        {post.body}
-      </p>
       {[...comments].reverse().map((c) => (
         <div className="comment-line" key={c.id}>
           <strong>{c.displayName}</strong> <span>{c.body}</span>
@@ -359,8 +384,34 @@ export function PostCard({
       ) : null}
     </>
   );
+  const content = (
+    <>
+      <p className={`post-copy ${post.kind === "quote" ? "quote-copy" : ""}`}>
+        {post.body}
+      </p>
+      {compact ? (
+        commentCount > 0 ? (
+          <details className="post-conversation">
+            <summary>
+              {commentCount} {commentCount === 1 ? "note" : "notes"} in this
+              conversation
+            </summary>
+            {conversation}
+          </details>
+        ) : null
+      ) : (
+        conversation
+      )}
+    </>
+  );
   return (
-    <article className="post-card">
+    <article className={`post-card ${compact ? "social-post" : ""}`}>
+      {compact && post.feedReason ? (
+        <p className="post-feed-reason">
+          <Icon name="sparkles" />
+          {post.feedReason}
+        </p>
+      ) : null}
       <div className="post-head">
         <Avatar
           name={post.displayName}
@@ -419,15 +470,27 @@ export function PostCard({
           className={`like-btn ${post.liked ? "liked" : ""}`}
           onClick={() => onLike(post)}
           aria-pressed={post.liked}
+          aria-label={
+            compact
+              ? `${post.liked ? "Remove appreciation" : "Appreciate post"} (${post.likes})`
+              : undefined
+          }
+          title={compact ? "Appreciate post" : undefined}
         >
           <Icon name="heart" />
-          <b>{post.likes}</b> appreciations
+          <b>{post.likes}</b> {compact ? null : "appreciations"}
         </button>
-        <button className="comment-btn" onClick={() => onComment(post)}>
-          {commentCount} notes
+        <button
+          className="comment-btn"
+          onClick={() => onComment(post)}
+          aria-label={compact ? `Add a note (${commentCount})` : undefined}
+          title={compact ? "Add a note" : undefined}
+        >
+          {compact ? <Icon name="comment" /> : null}
+          {commentCount} {compact ? null : "notes"}
         </button>
         {user && user.id !== post.userId ? (
-          <ReportButton kind="post" targetId={post.id} />
+          <ReportButton kind="post" targetId={post.id} compact={compact} />
         ) : null}
         {user?.id === post.userId ? (
           <>
