@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import type { Book, BookList, User } from "../shared/types";
 import { api, json } from "./api";
-import { BookCard, Cover, Dialog, ErrorMessage, Form } from "./components";
+import {
+  BookCard,
+  Cover,
+  Dialog,
+  ErrorMessage,
+  Form,
+  Icon,
+} from "./components";
 import { ListBookPicker } from "./ListBookPicker";
 import { PageNavigation, useNumberedPage } from "./NumberedPages";
 import { ListDiscussion } from "./ListDiscussion";
@@ -85,36 +92,48 @@ export function Lists({
   return (
     <>
       <section className="view-panel list-page">
-        <span className="section-kicker">STORIES THAT BELONG TOGETHER</span>
-        <h2>
-          {current?.title ||
-            (id ? "A reader’s collection" : "A list for every mood.")}
-        </h2>
-        <p className="view-intro">
-          {current?.description ||
-            (id
-              ? ""
-              : "Gather books around a feeling, a season, or an idea. Keep your collection private or share it with other readers.")}
-        </p>
-        <div className="list-actions">
+        <div className="visual-page-heading">
+          <span className="page-emblem" aria-hidden="true">
+            <Icon name="shelves" />
+          </span>
+          <div>
+            <h2>
+              {current?.title ||
+                (id ? "A reader’s collection" : "Book collections")}
+            </h2>
+            <p className="view-intro">
+              {current?.description ||
+                (id
+                  ? ""
+                  : "Your collections and discoveries from other readers.")}
+            </p>
+          </div>
+        </div>
+        <div className="list-actions visual-toolbar">
           {id ? (
-            <a className="plain-link" href="#lists">
-              All book lists
+            <a
+              className="visual-icon-action"
+              href="#lists"
+              aria-label="All book lists"
+              title="All book lists"
+            >
+              <Icon name="back" />
             </a>
           ) : (
             <button
               className="primary-btn"
               onClick={() => (user ? setEditing("new") : onAuth())}
             >
-              Create a list
+              <Icon name="plus" /> Create a list
             </button>
           )}
           {!id && user ? (
             <button
-              className="outline-btn"
+              className="outline-btn icon-label"
               aria-pressed={mine}
               onClick={() => go(1, !mine)}
             >
+              <Icon name={mine ? "community" : "profile"} />
               {mine ? "Show all lists" : "Show my lists"}
             </button>
           ) : null}
@@ -129,19 +148,28 @@ export function Lists({
           {current?.userId === user?.id && current ? (
             <>
               <button
-                className="outline-btn"
+                className="visual-icon-action"
+                aria-label="Edit list"
+                title="Edit list"
                 onClick={() => setEditing(current)}
               >
-                Edit list
+                <Icon name="journal" />
               </button>
-              <button className="plain-link" onClick={() => setDeleting(true)}>
-                Delete list
+              <button
+                className="visual-icon-action"
+                aria-label="Delete list"
+                title="Delete list"
+                onClick={() => setDeleting(true)}
+              >
+                <Icon name="trash" />
               </button>
             </>
           ) : null}
           {current?.visibility === "public" ? (
             <button
-              className="outline-btn"
+              className="visual-icon-action"
+              aria-label="Copy share link"
+              title="Copy share link"
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(location.href);
@@ -153,7 +181,7 @@ export function Lists({
                 }
               }}
             >
-              Copy share link
+              <Icon name="share" />
             </button>
           ) : null}
         </div>
@@ -171,7 +199,7 @@ export function Lists({
           <p role="status">Opening book lists…</p>
         ) : current ? (
           current.books.length ? (
-            <div className="book-grid">
+            <div className="book-grid collection-books">
               {current.books.map((book) => (
                 <BookCard key={book.id} book={book} onOpen={onBook} />
               ))}
@@ -202,23 +230,32 @@ export function Lists({
                 </div>
                 <div className="list-summary-copy">
                   <span className="section-kicker">
+                    <Icon
+                      name={
+                        item.visibility === "private" ? "lock" : "community"
+                      }
+                    />{" "}
                     {item.visibility} · {item.books.length} books
                   </span>
                   <h3>
                     <a href={`#list/${item.id}`}>{item.title}</a>
                   </h3>
-                  <p>
-                    {item.description ||
-                      "A collection of stories worth keeping together."}
-                  </p>
+                  {item.description ? <p>{item.description}</p> : null}
                   <small>Collected by {item.displayName}</small>
                 </div>
               </article>
             ))}
             {browsing.data?.total === 0 ? (
-              <p className="empty-state">
-                No lists here yet. Create the first collection.
-              </p>
+              <div className="visual-empty">
+                <img
+                  src="/art/reading-garden.svg"
+                  alt=""
+                  width="180"
+                  height="140"
+                />
+                <h3>Your next collection starts here</h3>
+                <p>Use Create a list to gather your first books.</p>
+              </div>
             ) : null}
           </div>
         ) : null}

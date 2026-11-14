@@ -571,7 +571,7 @@ export function App() {
             </div>
           ) : null}
           <div
-            className={`content-grid ${view === "home" ? "social-home" : ""} ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" ? "collection-layout" : ""}`}
+            className={`content-grid ${view === "home" ? "social-home" : ""} ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" || ["lists", "list", "community", "readers", "journal"].includes(view) ? "collection-layout" : ""}`}
           >
             <section className="feed-column" aria-busy={loading} key={view}>
               {(view === "terms" || view === "cookies") && (
@@ -1196,26 +1196,37 @@ export function App() {
                 <section className="view-panel community-garden">
                   <div className="community-intro">
                     <div>
-                      <span className="section-kicker">FIND YOUR PEOPLE</span>
+                      <span className="page-emblem" aria-hidden="true">
+                        <Icon name="community" />
+                      </span>
                       <h2>Your reading circle</h2>
                       <p className="view-intro">
-                        Real readers, shared curiosity, and your next good
-                        conversation.
+                        Find readers through the books you both love.
                       </p>
-                      <p className="view-intro">
-                        Reader matches use public four- and five-star reviews.
-                      </p>
+                      <details className="feed-explanation">
+                        <summary>How matches work</summary>
+                        <p>
+                          Reader matches use public four- and five-star reviews.
+                        </p>
+                      </details>
                       <div className="account-actions">
                         {data.user ? (
                           <a
-                            className="plain-link"
+                            className="visual-icon-action"
+                            aria-label="Readers you follow"
+                            title="Readers you follow"
                             href={`#readers?scope=following&reader=${data.user.id}`}
                           >
-                            Readers you follow
+                            <Icon name="community" />
                           </a>
                         ) : null}
-                        <a className="plain-link" href="#readers">
-                          Search readers and explore connections ↗
+                        <a
+                          className="visual-icon-action"
+                          href="#readers"
+                          aria-label="Search readers and explore connections"
+                          title="Search readers"
+                        >
+                          <Icon name="search" />
                         </a>
                       </div>
                     </div>
@@ -1230,8 +1241,13 @@ export function App() {
                   </div>
                   <div className="community-directory-heading">
                     <h3>Readers to know</h3>
-                    <a href="#lists" className="plain-link">
-                      Explore community book lists ↗
+                    <a
+                      href="#lists"
+                      className="visual-icon-action"
+                      aria-label="Explore community book lists"
+                      title="Explore community book lists"
+                    >
+                      <Icon name="shelves" />
                     </a>
                   </div>
                   {data.readers.map((r) => (
@@ -1254,7 +1270,7 @@ export function App() {
                           </strong>
                         </a>
                         <small>@{r.username}</small>
-                        <p>{r.bio || "A new chapter on Shelves."}</p>
+                        {r.bio ? <p>{r.bio}</p> : null}
                         {r.reason ? (
                           <small className="reader-match">{r.reason}</small>
                         ) : null}
@@ -1289,18 +1305,32 @@ export function App() {
                 </section>
               ) : null}
               {!loading && view === "journal" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    YOUR PRIVATE READING JOURNAL
-                  </span>
-                  <h2>Little things worth remembering.</h2>
-                  <p className="view-intro">
-                    Your private reviews, gathered from your reading records.
-                  </p>
+                <section className="view-panel journal-page">
+                  <div className="visual-page-heading">
+                    <span className="page-emblem" aria-hidden="true">
+                      <Icon name="journal" />
+                    </span>
+                    <div>
+                      <h2>Reading journal</h2>
+                      <p className="view-intro icon-label">
+                        <Icon name="lock" />
+                        Private notes, just for you.
+                      </p>
+                    </div>
+                    <a
+                      href="#shelves"
+                      className="visual-icon-action"
+                      aria-label="Visit my shelves"
+                      title="Visit my shelves"
+                    >
+                      <Icon name="shelves" />
+                    </a>
+                  </div>
                   {data.library
                     .filter((r) => r.review)
                     .map((r) => (
                       <article className="journal-entry" key={r.bookId}>
+                        <Cover book={r.book} small />
                         <div className="journal-date">
                           {r.rating ? `${r.rating} / 5` : "A NOTE"}
                         </div>
@@ -1316,7 +1346,13 @@ export function App() {
                       </article>
                     ))}
                   {!data.library.some((r) => r.review) ? (
-                    <div className="empty-state">
+                    <div className="visual-empty">
+                      <img
+                        src="/art/reading-garden.svg"
+                        alt=""
+                        width="180"
+                        height="140"
+                      />
                       <p>
                         Open a book and leave a private review to begin your
                         journal.
@@ -1325,7 +1361,7 @@ export function App() {
                         className="primary-btn"
                         onClick={() => navigate("shelves")}
                       >
-                        Visit my shelves ↗
+                        <Icon name="shelves" /> Visit my shelves ↗
                       </button>
                     </div>
                   ) : null}

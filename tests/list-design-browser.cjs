@@ -78,6 +78,36 @@ const { auditLayout } = require("./layout.cjs");
         fullPage: true,
       });
     }
+    await context.request.put(base + "/api/library/seed-garden", {
+      headers,
+      data: {
+        status: "Finished",
+        page: 288,
+        rating: 5,
+        review: "A private note about returning to a childhood favorite.",
+        shelfIds: [],
+      },
+    });
+    for (const width of [1477, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(base + "/#journal");
+      await page.reload();
+      await page.locator(".journal-entry .real-cover").waitFor();
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+            .map((a) => a.finished.catch(() => {})),
+        ),
+      );
+      await auditLayout(page, "visual journal " + width);
+      await page.screenshot({
+        path: `test-results/visual-journal-${width}.png`,
+        fullPage: true,
+      });
+    }
+    await page.goto(base + "/#lists");
     await page
       .getByRole("link", { name: "Garden reading", exact: true })
       .focus();

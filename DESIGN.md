@@ -196,3 +196,7 @@ Tailwind v4 utilities and shared component rules refine the existing watercolor/
 ## Social Home — 13 November 2026
 
 Home keeps the paper palette and restrained serif header, with a compact composer, four icon-and-label feed tabs and border-separated posts. Current reading is an expandable nightstand strip. Removed the book recommendation grid, goal widget and daily book pick from Home; desktop retains a quiet reader-suggestions column. Mobile secondary destinations use named SVG icon links. Like, comment and report controls use accessible SVG icons; comments expand inside each post. Other routes retain their established controls.
+
+## Visual collections and reader spaces — 14 November 2026
+
+Book lists, list detail, Reading circle, the reader directory and journal use the collection-width shell without unrelated rail widgets. A shared visual-page-heading pairs the title with a restrained SVG emblem. Named 44px icon actions provide back, edit, delete, share and search controls; creation and scope toggles retain brief text labels. List cards prioritize larger jacket previews, visibility icons and actual descriptions. Empty collections reuse the local watercolor illustration. Journal entries pair real covers with private notes and ratings. Community navigation uses icon actions and the match explanation sits in a disclosure.

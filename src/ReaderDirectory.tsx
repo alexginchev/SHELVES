@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Reader, User } from "../shared/types";
 import { api } from "./api";
-import { Avatar, ErrorMessage, Form } from "./components";
+import { Avatar, ErrorMessage, Form, Icon } from "./components";
 import { ReaderName } from "./ShelvesBadge";
 type Result = {
   items: Reader[];
@@ -83,15 +83,23 @@ export function ReaderDirectory({
   }
   return (
     <section className="view-panel reader-directory">
-      <span className="section-kicker">BETTER STORIES, TOGETHER</span>
-      <h2>{data?.heading || "Find your reading people"}</h2>
-      <p>
-        Search by public name or username. Open a reading corner to explore
-        reviews and shared thoughts.
-      </p>
+      <div className="visual-page-heading">
+        <span className="page-emblem" aria-hidden="true">
+          <Icon name="community" />
+        </span>
+        <div>
+          <h2>{data?.heading || "Find your reading people"}</h2>
+          <p>Find readers by name or username.</p>
+        </div>
+      </div>
       <div className="account-actions">
-        <a href="#community" className="plain-link">
-          Reading circle
+        <a
+          href="#community"
+          className="visual-icon-action"
+          aria-label="Reading circle"
+          title="Reading circle"
+        >
+          <Icon name="back" />
         </a>
         {query.get("scope") && query.get("scope") !== "all" ? (
           <a href="#readers" className="plain-link">
@@ -125,12 +133,19 @@ export function ReaderDirectory({
           />
         </label>
         <div className="account-actions">
-          <button className="primary-btn" disabled={loading}>
-            Search readers
+          <button
+            className="visual-icon-action"
+            aria-label="Search readers"
+            title="Search readers"
+            disabled={loading}
+          >
+            <Icon name="search" />
           </button>
           <button
             type="button"
-            className="plain-link"
+            className="visual-icon-action"
+            aria-label="Clear reader search"
+            title="Clear reader search"
             disabled={loading}
             onClick={(e) => {
               e.currentTarget.form?.reset();
@@ -141,7 +156,7 @@ export function ReaderDirectory({
               setRevision(revision + 1);
             }}
           >
-            Clear reader search
+            <Icon name="refresh" />
           </button>
         </div>
       </Form>

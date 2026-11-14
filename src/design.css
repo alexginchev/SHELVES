@@ -17,6 +17,174 @@
 }
 
 @layer components {
+  .visual-icon-action {
+    @apply inline-flex shrink-0 items-center justify-center rounded-full border border-solid border-line bg-surface text-ink no-underline;
+    width: 44px;
+    height: 44px;
+  }
+  .visual-icon-action:hover {
+    @apply bg-paper;
+  }
+  .visual-icon-action:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 3px;
+  }
+  .visual-icon-action svg,
+  .icon-label svg,
+  .visual-toolbar svg,
+  .page-emblem svg,
+  .list-summary .section-kicker svg,
+  .journal-page .primary-btn svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .icon-label,
+  .visual-toolbar .primary-btn {
+    @apply inline-flex items-center justify-center gap-2;
+  }
+  .visual-page-heading {
+    @apply mb-6 flex flex-wrap items-center gap-4;
+  }
+  .visual-page-heading > div {
+    @apply min-w-0 flex-1;
+  }
+  .visual-page-heading h2 {
+    @apply m-0 text-3xl;
+  }
+  .visual-page-heading .view-intro {
+    @apply mt-2 mb-0 text-sm;
+  }
+  .page-emblem {
+    @apply inline-flex shrink-0 items-center justify-center rounded-2xl text-ink;
+    width: 64px;
+    height: 64px;
+    background: var(--blue-pale) url("/art/paper-grain.svg");
+  }
+  .page-emblem svg {
+    width: 30px;
+    height: 30px;
+  }
+  .list-page,
+  .journal-page,
+  .reader-directory {
+    @apply border-0 bg-transparent p-0;
+    box-shadow: none;
+  }
+  .visual-toolbar {
+    @apply mb-6 flex flex-wrap items-center gap-2 border-0 border-b border-solid border-line pb-5;
+  }
+  .list-page .list-collection {
+    @apply grid gap-5;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  }
+  .list-page .list-summary {
+    @apply flex flex-col items-stretch gap-4 p-5;
+  }
+  .list-page .list-jackets {
+    min-height: 190px;
+    justify-content: center;
+  }
+  .list-page .list-jackets .real-cover,
+  .list-page .list-jackets .paper-cover {
+    width: 88px;
+    height: 132px;
+    flex-basis: 88px;
+  }
+  .list-page .list-summary h3 {
+    @apply mt-2 mb-2 text-xl;
+  }
+  .list-page .list-summary .section-kicker {
+    @apply flex items-center gap-2;
+  }
+  .list-page .list-summary p {
+    @apply text-sm;
+  }
+  .visual-empty {
+    @apply py-8 text-center text-muted;
+  }
+  .visual-empty > img {
+    display: block;
+    margin: 0 auto 12px;
+  }
+  .visual-empty h3 {
+    @apply text-xl text-ink;
+  }
+  .visual-empty .primary-btn {
+    @apply inline-flex items-center gap-2;
+  }
+  .community-garden .community-intro {
+    margin: 0 0 24px;
+    padding: 24px;
+    border-radius: 16px;
+  }
+  .community-garden .community-intro h2 {
+    @apply mt-4 mb-2;
+  }
+  .community-garden .reading-garden-art {
+    max-height: 210px;
+  }
+  .community-garden .community-row {
+    @apply rounded-2xl border border-solid border-line bg-surface p-4;
+    margin-top: 12px;
+  }
+  .community-garden .community-row .avatar {
+    width: 56px;
+    height: 56px;
+  }
+  .journal-page .journal-entry {
+    display: grid;
+    grid-template-columns: 64px 48px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    padding: 24px 0;
+  }
+  .journal-page .journal-entry .real-cover,
+  .journal-page .journal-entry .paper-cover {
+    width: 64px;
+    height: 96px;
+    min-width: 64px;
+  }
+  .journal-page .journal-title {
+    text-align: left;
+    font-family: var(--serif);
+    font-size: 21px;
+    text-decoration: none;
+  }
+  .journal-page .journal-date {
+    @apply text-xs;
+  }
+  @media (max-width: 600px) {
+    .visual-page-heading {
+      gap: 12px;
+    }
+    .visual-page-heading h2 {
+      font-size: 25px;
+    }
+    .page-emblem {
+      width: 48px;
+      height: 48px;
+    }
+    .journal-page .journal-entry {
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 12px;
+    }
+    .journal-page .journal-entry .real-cover,
+    .journal-page .journal-entry .paper-cover {
+      width: 48px;
+      height: 72px;
+      min-width: 48px;
+    }
+    .journal-page .journal-date {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: end;
+      margin-bottom: 0;
+    }
+    .journal-page .journal-entry > div:last-child {
+      grid-column: 1/-1;
+    }
+  }
   .view-panel,
   .compose-card,
   .post-card,

@@ -54,6 +54,22 @@ export function Icon({ name }: { name: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    back: <path d="m10 5-7 7 7 7M3 12h18" />,
+    lock: (
+      <>
+        <rect x="5" y="10" width="14" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+      </>
+    ),
+    share: (
+      <>
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="m9 10 6-3M9 14l6 3" />
+      </>
+    ),
+    trash: <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />,
     flag: <path d="M5 21V3c5-3 9 3 14 0v10c-5 3-9-3-14 0" />,
     chevron: <path d="m8 10 4 4 4-4" />,
     comment: <path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a9 9 0 0 1 19 0Z" />,
