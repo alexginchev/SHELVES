@@ -200,3 +200,7 @@ Home keeps the paper palette and restrained serif header, with a compact compose
 ## Visual collections and reader spaces — 14 November 2026
 
 Book lists, list detail, Reading circle, the reader directory and journal use the collection-width shell without unrelated rail widgets. A shared visual-page-heading pairs the title with a restrained SVG emblem. Named 44px icon actions provide back, edit, delete, share and search controls; creation and scope toggles retain brief text labels. List cards prioritize larger jacket previews, visibility icons and actual descriptions. Empty collections reuse the local watercolor illustration. Journal entries pair real covers with private notes and ratings. Community navigation uses icon actions and the match explanation sits in a disclosure.
+
+## Living reading feed — 14 November 2026
+
+Home uses a pale blue composer, sage reader-suggestion panel, white paper posts and restrained blue/terracotta edge accents. Linked books include real cover thumbnails and author credits. Initials avatars derive a stable color from the displayed name. No generated photography or invented portraits are introduced. ReaderName keeps the verification mark beside the final name word; the badge's SVG has explicit dimensions that override general Home icon sizing.

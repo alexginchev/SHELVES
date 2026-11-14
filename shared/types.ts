@@ -127,6 +127,8 @@ export type Post = {
   likes: number;
   liked: boolean;
   bookTitle: string | null;
+  bookCover?: string | null;
+  bookAuthor?: string | null;
   bookId: string | null;
   rating: number;
   containsSpoilers: boolean;

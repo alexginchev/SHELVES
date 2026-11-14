@@ -480,7 +480,9 @@ export function App() {
             </span>
           </button>
         </aside>
-        <main className="main-content">
+        <main
+          className={`main-content ${view === "home" ? "home-canvas" : ""}`}
+        >
           <header className="topbar">
             <a className="mobile-brand" href="#home" aria-label="Shelves home">
               <BrandMark />
@@ -842,7 +844,7 @@ export function App() {
                     </summary>
                     <p>
                       For you balances recent conversations, people you follow
-                      and books or genres you�ve publicly reviewed highly.
+                      and books or genres you have publicly reviewed highly.
                       Private notes and reading progress are never used. Latest
                       shows posts in date order.
                     </p>

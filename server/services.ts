@@ -306,7 +306,7 @@ export async function feed(
   }
   const posts = await all<Omit<Post, "comments" | "liked">>(
     db,
-    `SELECT p.id,p.body,p.kind,(SELECT version FROM profile_images WHERE user_id=u.id AND kind='avatar') AS "avatarVersion",p.created_at AS "createdAt",p.edited_at AS "editedAt",p.user_id AS "userId",u.username,u.display_name AS "displayName",p.book_id AS "bookId",b.title AS "bookTitle",p.rating,p.contains_spoilers AS "containsSpoilers",${likeCount} AS likes FROM posts p JOIN users u ON u.id=p.user_id LEFT JOIN books b ON b.id=p.book_id ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""} ORDER BY ${paging?.sort === "appreciated" ? likeCount + " DESC," : ""}p.created_at DESC,p.id DESC LIMIT ${paging?.limit || 50}`,
+    `SELECT p.id,p.body,p.kind,(SELECT version FROM profile_images WHERE user_id=u.id AND kind='avatar') AS "avatarVersion",p.created_at AS "createdAt",p.edited_at AS "editedAt",p.user_id AS "userId",u.username,u.display_name AS "displayName",p.book_id AS "bookId",b.title AS "bookTitle",b.cover AS "bookCover",b.author AS "bookAuthor",p.rating,p.contains_spoilers AS "containsSpoilers",${likeCount} AS likes FROM posts p JOIN users u ON u.id=p.user_id LEFT JOIN books b ON b.id=p.book_id ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""} ORDER BY ${paging?.sort === "appreciated" ? likeCount + " DESC," : ""}p.created_at DESC,p.id DESC LIMIT ${paging?.limit || 50}`,
     ...values,
   );
   return Promise.all(

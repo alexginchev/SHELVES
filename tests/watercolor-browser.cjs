@@ -40,16 +40,25 @@ const { auditLayout } = require("./layout.cjs");
       ).status(),
       200,
     );
+    await context.request.post(base + "/api/posts", {
+      headers: { "X-Shelves-Request": "1" },
+      data: {
+        kind: "thought",
+        body: "A shared reading note for the badge layout check.",
+      },
+    });
     for (const width of [1477, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
-      for (const route of ["community", "profile", "readers"]) {
+      for (const route of ["home", "community", "profile", "readers"]) {
         await page.goto(base + "/#" + route);
         const target =
-          route === "community"
-            ? ".reading-garden-art"
-            : route === "profile"
-              ? ".profile-display-name .shelves-badge"
-              : ".reader-directory .shelves-badge";
+          route === "home"
+            ? ".social-post .shelves-badge"
+            : route === "community"
+              ? ".reading-garden-art"
+              : route === "profile"
+                ? ".profile-display-name .shelves-badge"
+                : ".reader-directory .shelves-badge";
         await page.locator(target).first().waitFor();
         await page.evaluate(() =>
           Promise.all(
@@ -60,6 +69,14 @@ const { auditLayout } = require("./layout.cjs");
           ),
         );
         await auditLayout(page, "watercolor " + route + " " + width);
+        for (const badge of await page.locator(".shelves-badge").all()) {
+          const outer = await badge.boundingBox(),
+            glyph = await badge.locator("svg").boundingBox();
+          assert(
+            glyph.width <= outer.width + 1 && glyph.height <= outer.height + 1,
+            "Badge glyph stays within its inline box",
+          );
+        }
         if (route === "profile") {
           const badge = await page.locator(target).boundingBox();
           const name = await page

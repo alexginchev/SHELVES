@@ -125,7 +125,10 @@ export function Avatar({ name, src }: { name: string; src?: string }) {
       />
     );
   return (
-    <span className="avatar avatar-you" aria-hidden="true">
+    <span
+      className={`avatar avatar-you avatar-tone-${Array.from(name).reduce((sum, c) => sum + c.charCodeAt(0), 0) % 5}`}
+      aria-hidden="true"
+    >
       {name[0]?.toUpperCase() || "R"}
     </span>
   );
@@ -470,11 +473,28 @@ export function PostCard({
         content
       )}
       {post.bookTitle ? (
-        <div className="post-book-chip">
-          Reading alongside:{" "}
+        <div className={`post-book-chip ${compact ? "post-book-preview" : ""}`}>
+          {compact ? null : <>Reading alongside: </>}
           {post.bookId ? (
             <a href={`#book/${post.bookId}`}>
-              <strong>{post.bookTitle} ↗</strong>
+              {compact && post.bookCover ? (
+                <img
+                  src={post.bookCover}
+                  alt=""
+                  loading="lazy"
+                  width="52"
+                  height="78"
+                  onError={(e) => {
+                    e.currentTarget.hidden = true;
+                  }}
+                />
+              ) : null}
+              <span>
+                <strong>{post.bookTitle}</strong>
+                {compact && post.bookAuthor ? (
+                  <small>{post.bookAuthor}</small>
+                ) : null}
+              </span>
             </a>
           ) : (
             <strong>{post.bookTitle}</strong>

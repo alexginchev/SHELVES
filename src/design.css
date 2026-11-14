@@ -451,4 +451,106 @@
       height: 32px;
     }
   }
+  .reader-name-tail {
+    white-space: nowrap;
+  }
+  .shelves-badge {
+    vertical-align: -0.16em;
+    margin-left: 0.25em;
+  }
+  .shelves-badge svg,
+  .social-home .shelves-badge svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .avatar-tone-0 {
+    background: #d8e4e8;
+    color: #315b70;
+  }
+  .avatar-tone-1 {
+    background: #e3dfef;
+    color: #655679;
+  }
+  .avatar-tone-2 {
+    background: #e6d4c8;
+    color: #8b543b;
+  }
+  .avatar-tone-3 {
+    background: #d9e3d0;
+    color: #4e6846;
+  }
+  .avatar-tone-4 {
+    background: #f0e3bf;
+    color: #79652e;
+  }
+  .home-canvas {
+    background:
+      linear-gradient(130deg, #e9eff0aa, transparent 42%),
+      linear-gradient(345deg, #e6ebdf80, transparent 45%);
+  }
+  .social-home .compose-card {
+    background: #e5eef0;
+    border-color: #cadbdd;
+  }
+  .social-home .home-reading-strip {
+    border-color: #b8c9c1;
+  }
+  .social-home .home-feed-toolbar .filter-btn.active {
+    border-color: #a35440;
+    color: #833f31;
+  }
+  .social-home .post-card {
+    background: #fffdf9;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 3px 12px #20354804;
+  }
+  .social-home .feed-list {
+    gap: 18px;
+  }
+  .social-home .post-card:nth-of-type(3n + 2) {
+    border-top: 3px solid #c6d6d9;
+  }
+  .social-home .post-card:nth-of-type(3n + 3) {
+    border-top: 3px solid #d9c5b6;
+  }
+  .social-home .people-card {
+    background: #e5eadf;
+    padding: 20px;
+    border: 1px solid #d4ddcb;
+    border-radius: 16px;
+  }
+  .post-book-preview {
+    padding: 0;
+    background: #edf0e8;
+  }
+  .post-book-preview a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    text-decoration: none;
+    min-height: 80px;
+  }
+  .post-book-preview img {
+    width: 52px;
+    height: 78px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 2px 3px 7px #20354820;
+  }
+  .post-book-preview span {
+    min-width: 0;
+  }
+  .post-book-preview strong {
+    font-family: var(--serif);
+    font-size: 18px;
+  }
+  .post-book-preview small {
+    display: block;
+    margin-top: 5px;
+    color: var(--ink-soft);
+  }
 }

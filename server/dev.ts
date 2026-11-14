@@ -4,7 +4,12 @@ import { openRuntimeDatabase } from "./runtime-db.ts";
 const db = await openRuntimeDatabase();
 const app = createApp(db);
 const vite = await createServer({
-  server: { middlewareMode: true },
+  server: {
+    middlewareMode: true,
+    hmr: process.env.HMR_PORT
+      ? { port: Number(process.env.HMR_PORT) }
+      : undefined,
+  },
   appType: "spa",
 });
 app.use(vite.middlewares);

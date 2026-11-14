@@ -28,14 +28,20 @@ export function ReaderName({
   name: string;
   verified?: boolean;
 }) {
+  const split = name.lastIndexOf(" ");
   return (
     <span className="reader-name">
-      {name}
       {verified ? (
         <>
-           <ShelvesBadge verified />
+          {split >= 0 ? name.slice(0, split + 1) : ""}
+          <span className="reader-name-tail">
+            {name.slice(split + 1)}
+            <ShelvesBadge verified />
+          </span>
         </>
-      ) : null}
+      ) : (
+        name
+      )}
     </span>
   );
 }
