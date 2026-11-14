@@ -1,3 +1,18 @@
+import { HeaderSearch } from "./HeaderSearch";
+import {
+  BrandMark,
+  BrandLoading,
+  SiteFooter,
+  SiteInformation,
+} from "./SiteIdentity";
+import { LanguageSelect } from "./LanguageSelect";
+import { usePagedFeed, FeedMore } from "./PagedFeed";
+import { AdminAccounts } from "./AdminAccounts";
+import { SafetySettings, AdminReports } from "./SocialSafety";
+import { ProfileIdentity, ProfileManagement } from "./ProfileIdentity";
+import { CurrentlyReading } from "./CurrentlyReading";
+import { ReaderName } from "./ShelvesBadge";
+import { AuthorPage } from "./AuthorPage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   Book,
@@ -19,9 +34,24 @@ import {
   Icon,
   PostCard,
 } from "./components";
-import { AuthDialog, BookDialog, ProfileForm, SimpleForm } from "./forms";
+import {
+  AuthDialog,
+  BookDialog,
+  ProfileForm,
+  SimpleForm,
+  ShelfDialog,
+} from "./forms";
 import { BookPage } from "./BookPage";
+import { ReaderPage } from "./ReaderPage";
+import { Notifications, PostPage } from "./Notifications";
+import { Lists } from "./Lists";
+import { AccountSettings } from "./AccountSettings";
+import { ReadingPreferences } from "./ReadingPreferences";
+import { Catalog } from "./Catalog";
+import { ReaderDirectory } from "./ReaderDirectory";
 const views = {
+  terms: "Terms of use",
+  cookies: "Cookies",
   home: "Your reading nook",
   discover: "Find your next favorite",
   shelves: "Your personal library",
@@ -29,6 +59,19 @@ const views = {
   journal: "Notes worth keeping",
   profile: "Your reading life",
   book: "Between the pages",
+  reader: "A reader's corner",
+  notifications: "Your notifications",
+  post: "From the reading room",
+  lists: "Collections worth sharing",
+  list: "A collection of stories",
+  settings: "Account settings",
+  safety: "Your reading circle controls",
+  moderation: "Community reports",
+  "moderation-accounts": "Account moderation",
+  preferences: "Your reading preferences",
+  author: "Authors",
+  catalog: "Browse the catalogue",
+  readers: "Find your reading people",
 };
 type View = keyof typeof views;
 const nav: [View, string, string][] = [
@@ -37,6 +80,7 @@ const nav: [View, string, string][] = [
   ["shelves", "My shelves", "shelves"],
   ["community", "Reading circle", "community"],
   ["journal", "Reading journal", "journal"],
+  ["lists", "Book lists", "shelves"],
 ];
 const statuses: ReadingStatus[] = [
   "Currently reading",
@@ -45,13 +89,31 @@ const statuses: ReadingStatus[] = [
   "Did not finish",
 ];
 const readBookId = () =>
-  /^book\/([a-zA-Z0-9_-]{1,80})$/.exec(location.hash.slice(1))?.[1] || null;
+  /^book\/([a-zA-Z0-9_-]{1,80})$/.exec(
+    location.hash.slice(1).split("?")[0],
+  )?.[1] || null;
+const readReaderId = () =>
+  /^reader\/([a-zA-Z0-9_-]{1,80})$/.exec(location.hash.slice(1))?.[1] || null;
+const readPostId = () =>
+  /^post\/([a-zA-Z0-9_-]{1,80})$/.exec(location.hash.slice(1))?.[1] || null;
+const readListId = () =>
+  /^list\/([a-zA-Z0-9_-]{1,80})$/.exec(location.hash.slice(1))?.[1] || null;
+const readShelf = () =>
+  location.hash.startsWith("#shelves?")
+    ? new URLSearchParams(location.hash.split("?")[1]).get("shelf") || ""
+    : "";
 const readView = (): View =>
-  readBookId()
-    ? "book"
-    : Object.hasOwn(views, location.hash.slice(1))
-      ? (location.hash.slice(1) as View)
-      : "home";
+  readListId()
+    ? "list"
+    : readBookId()
+      ? "book"
+      : readReaderId()
+        ? "reader"
+        : readPostId()
+          ? "post"
+          : Object.hasOwn(views, location.hash.slice(1).split("?")[0])
+            ? (location.hash.slice(1).split("?")[0] as View)
+            : "home";
 type Snapshot = {
   user: User | null;
   books: Book[];
@@ -61,6 +123,8 @@ type Snapshot = {
   library: Reading[];
   shelves: Shelf[];
   stats: Stats | null;
+  unreadNotifications: number;
+  preferencesCompleted: boolean;
 };
 const empty: Snapshot = {
   user: null,
@@ -71,10 +135,15 @@ const empty: Snapshot = {
   library: [],
   shelves: [],
   stats: null,
+  unreadNotifications: 0,
+  preferencesCompleted: false,
 };
 export function App() {
   const [data, setData] = useState<Snapshot>(empty),
     [bookId, setBookId] = useState<string | null>(readBookId),
+    [readerId, setReaderId] = useState<string | null>(readReaderId),
+    [postId, setPostId] = useState<string | null>(readPostId),
+    [listId, setListId] = useState<string | null>(readListId),
     [revision, setRevision] = useState(0),
     [view, setView] = useState<View>(readView),
     [loading, setLoading] = useState(true),
@@ -82,13 +151,20 @@ export function App() {
     [notice, setNotice] = useState(""),
     [auth, setAuth] = useState(false),
     [book, setBook] = useState<Book | null>(null),
-    [shelf, setShelf] = useState(""),
+    [shelf, setShelf] = useState(readShelf),
+    [shelfAction, setShelfAction] = useState<{
+      shelf: Shelf;
+      deleting: boolean;
+    } | null>(null),
+    [libraryQuery, setLibraryQuery] = useState(""),
+    [librarySort, setLibrarySort] = useState("recent"),
     [composer, setComposer] = useState<{
       kind: "post" | "shelf" | "comment" | "delete";
       post?: Post;
     } | null>(null),
     [busy, setBusy] = useState(false),
     [filter, setFilter] = useState("all");
+  const [searchLanguage, setSearchLanguage] = useState("");
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState<{
       items: Book[];
@@ -96,8 +172,47 @@ export function App() {
       warning: string | null;
     } | null>(null),
     [searching, setSearching] = useState(false),
-    [searchError, setSearchError] = useState("");
+    [searchError, setSearchError] = useState(""),
+    [searchRetry, setSearchRetry] = useState(0),
+    [searchComposing, setSearchComposing] = useState(false);
   const generation = useRef(0);
+  useEffect(() => {
+    const userId = data.user?.id;
+    if (!userId) return;
+    const controller = new AbortController();
+    let pending = false;
+    const update = async () => {
+      if (document.hidden || pending) return;
+      pending = true;
+      try {
+        const result = await api<{ unread: number }>("/notifications/unread", {
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(15000),
+          ]),
+        });
+        if (!controller.signal.aborted)
+          setData((current) =>
+            current.user?.id === userId
+              ? { ...current, unreadNotifications: result.unread }
+              : current,
+          );
+      } catch {
+        /* Keep the last confirmed count; the inbox provides explicit retry. */
+      } finally {
+        pending = false;
+      }
+    };
+    const timer = setInterval(() => void update(), 30000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      controller.abort();
+      clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [data.user?.id]);
   const refresh = useCallback(async () => {
     const version = ++generation.current;
     try {
@@ -115,6 +230,13 @@ export function App() {
     }
   }, []);
   useEffect(() => {
+    const update = () => {
+      void refresh();
+    };
+    window.addEventListener("shelves-safety-changed", update);
+    return () => window.removeEventListener("shelves-safety-changed", update);
+  }, [refresh]);
+  useEffect(() => {
     void refresh();
     return () => {
       generation.current++;
@@ -124,6 +246,10 @@ export function App() {
     const update = () => {
       setView(readView());
       setBookId(readBookId());
+      setReaderId(readReaderId());
+      setPostId(readPostId());
+      setListId(readListId());
+      setShelf(readShelf());
     };
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
@@ -136,7 +262,7 @@ export function App() {
   useEffect(() => {
     setSearchError("");
     setSearch(null);
-    if (view !== "discover" || query.trim().length < 2) {
+    if (view !== "discover" || query.trim().length < 2 || searchComposing) {
       setSearching(false);
       return;
     }
@@ -144,10 +270,17 @@ export function App() {
     setSearching(true);
     const timer = setTimeout(() => {
       api<{ items: Book[]; source: string; warning: string | null }>(
-        `/books/search?q=${encodeURIComponent(query.trim())}`,
-        { signal: controller.signal },
+        `/books/search?q=${encodeURIComponent(query.trim())}&language=${encodeURIComponent(searchLanguage)}`,
+        {
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(15000),
+          ]),
+        },
       )
-        .then(setSearch)
+        .then((result) => {
+          if (!controller.signal.aborted) setSearch(result);
+        })
         .catch((e) => {
           if (!controller.signal.aborted)
             setSearchError(e instanceof Error ? e.message : "Search failed.");
@@ -160,10 +293,17 @@ export function App() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, view]);
-  function navigate(next: View) {
+  }, [query, view, searchLanguage, searchRetry, searchComposing]);
+  useEffect(() => {
+    document.title = `${views[view]} · Shelves`;
+  }, [view]);
+  function navigate(next: View, selectedShelf = "") {
     setView(next);
-    location.hash = next;
+    setShelf(next === "shelves" ? selectedShelf : "");
+    location.hash =
+      next === "shelves" && selectedShelf
+        ? `shelves?shelf=${encodeURIComponent(selectedShelf)}`
+        : next;
     setFilter("all");
   }
   function openBookPage(selected: Book) {
@@ -209,25 +349,40 @@ export function App() {
       setBusy(false);
     }
   }
+  const spotlight =
+    data.books.find((b) => b.id === "seed-garden") || data.books[0];
   const username = data.user?.displayName || "Reader";
-  const filteredLibrary = data.library.filter(
-    (r) => !shelf || r.status === shelf || r.shelfIds.includes(shelf),
-  );
+  const filteredLibrary = data.library
+    .filter(
+      (r) =>
+        (!shelf || r.status === shelf || r.shelfIds.includes(shelf)) &&
+        `${r.book.title} ${r.book.author}`
+          .toLowerCase()
+          .includes(libraryQuery.trim().toLowerCase()),
+    )
+    .sort((a, b) =>
+      librarySort === "title"
+        ? a.book.title.localeCompare(b.book.title)
+        : librarySort === "author"
+          ? a.book.author.localeCompare(b.book.author)
+          : librarySort === "rating"
+            ? b.rating - a.rating
+            : 0,
+    );
+  const selectedShelf = data.shelves.find((s) => s.id === shelf);
   const goal = data.stats?.goal || 30,
     finished = data.stats?.finished || 0,
     pct = Math.min(100, Math.round((finished / goal) * 100));
-  const followed = new Set(
-    data.readers.filter((r) => r.following).map((r) => r.id),
+  const feedPage = usePagedFeed(
+    view === "home" && filter === "all" ? "for-you" : filter,
+    revision,
+    view === "home" || view === "community",
+    undefined,
+    data.user?.id,
   );
-  const visiblePosts = data.posts.filter(
-    (p) =>
-      filter === "all" ||
-      (filter === "reviews" && p.kind === "review") ||
-      (filter === "following" &&
-        (followed.has(p.userId) || p.userId === data.user?.id)),
-  );
+  const visiblePosts = feedPage.items;
   const shelfTitle =
-    data.shelves.find((s) => s.id === shelf)?.name || shelf || "Your shelves.";
+    data.shelves.find((s) => s.id === shelf)?.name || shelf || "All books";
   const startPost = () => {
     if (requireUser()) setComposer({ kind: "post" });
   };
@@ -235,97 +390,86 @@ export function App() {
     <>
       <div className="app-shell">
         <aside className="sidebar">
-          <a className="brand" href="#home">
-            <span className="brand-mark">
-              <Icon name="leaf" />
-            </span>
-            <span>
-              <strong>shelves</strong>
-              <small>THE BOOKISH SOCIAL CLUB</small>
-            </span>
+          <a className="brand" href="#home" aria-label="Shelves home">
+            <BrandMark />
           </a>
-          <div className="sidebar-label">YOUR CORNER</div>
-          <nav className="main-nav" aria-label="Main navigation">
-            {nav.map(([key, label, icon]) => (
+          <div className="sidebar-body">
+            <div className="sidebar-label">YOUR CORNER</div>
+            <nav className="main-nav" aria-label="Main navigation">
+              {nav.map(([key, label, icon]) => (
+                <button
+                  key={key}
+                  className={`nav-item ${view === key ? "active" : ""}`}
+                  onClick={() => {
+                    setShelf("");
+                    navigate(key);
+                  }}
+                  aria-current={view === key ? "page" : undefined}
+                >
+                  <span className="nav-icon">
+                    <Icon name={icon} />
+                  </span>
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <div className="sidebar-label shelf-label">
+              YOUR SHELVES
               <button
-                key={key}
-                className={`nav-item ${view === key ? "active" : ""}`}
+                className="plus-btn"
+                aria-label="Create shelf"
                 onClick={() => {
-                  setShelf("");
-                  navigate(key);
-                }}
-                aria-current={view === key ? "page" : undefined}
-              >
-                <span className="nav-icon">
-                  <Icon name={icon} />
-                </span>
-                {label}
-              </button>
-            ))}
-          </nav>
-          <div className="sidebar-label shelf-label">
-            YOUR SHELVES
-            <button
-              className="plus-btn"
-              aria-label="Create shelf"
-              onClick={() => {
-                if (requireUser()) setComposer({ kind: "shelf" });
-              }}
-            >
-              +
-            </button>
-          </div>
-          <nav className="shelf-nav" aria-label="Book shelves">
-            {statuses.map((status, i) => (
-              <button
-                className="shelf-link"
-                key={status}
-                onClick={() => {
-                  setShelf(status);
-                  navigate("shelves");
+                  if (requireUser()) setComposer({ kind: "shelf" });
                 }}
               >
-                <i
-                  className={`shelf-dot ${i === 0 ? "sage" : i === 1 ? "coral" : "blue"}`}
-                />
-                {status}
-                <span>
-                  {data.library.filter((r) => r.status === status).length}
-                </span>
+                +
               </button>
-            ))}
-            {data.shelves.map((s) => (
-              <button
-                key={s.id}
-                className="shelf-link"
-                onClick={() => {
-                  setShelf(s.id);
-                  navigate("shelves");
-                }}
-              >
-                <i className="shelf-dot blue" />
-                {s.name}
-                <span>{s.count}</span>
-              </button>
-            ))}
-          </nav>
-          <div className="sidebar-note">
-            <div className="note-sun">✳</div>
-            <p className="note-title">
-              A slower kind
-              <br />
-              of social.
-            </p>
-            <p className="note-copy">
-              Less scrolling. More stories worth keeping.
-            </p>
-            <span className="note-squiggle">〰 〰 〰</span>
+            </div>
+            <nav className="shelf-nav" aria-label="Book shelves">
+              {statuses.map((status, i) => (
+                <button
+                  className="shelf-link"
+                  key={status}
+                  onClick={() => {
+                    navigate("shelves", status);
+                  }}
+                >
+                  <i
+                    className={`shelf-dot ${i === 0 ? "sage" : i === 1 ? "coral" : "blue"}`}
+                  />
+                  <span className="shelf-name">{status}</span>
+                  <span className="shelf-count">
+                    {data.library.filter((r) => r.status === status).length}
+                  </span>
+                </button>
+              ))}
+              {data.shelves.map((s) => (
+                <button
+                  key={s.id}
+                  className="shelf-link"
+                  onClick={() => {
+                    navigate("shelves", s.id);
+                  }}
+                >
+                  <i className="shelf-dot blue" />
+                  <span className="shelf-name">{s.name}</span>
+                  <span className="shelf-count">{s.count}</span>
+                </button>
+              ))}
+            </nav>
           </div>
           <button
             className="profile-mini"
             onClick={() => (data.user ? navigate("profile") : setAuth(true))}
           >
-            <Avatar name={username} />
+            <Avatar
+              name={username}
+              src={
+                data.user?.avatarVersion
+                  ? `/api/readers/${data.user.id}/images/avatar?v=${data.user.avatarVersion}`
+                  : undefined
+              }
+            />
             <span className="profile-mini-text">
               <strong>{data.user ? username : "Make yourself at home"}</strong>
               <small>
@@ -336,13 +480,12 @@ export function App() {
             </span>
           </button>
         </aside>
-        <main className="main-content">
+        <main
+          className={`main-content ${view === "home" ? "home-canvas" : ""}`}
+        >
           <header className="topbar">
-            <a className="mobile-brand" href="#home">
-              <span className="brand-mark">
-                <Icon name="leaf" />
-              </span>{" "}
-              shelves
+            <a className="mobile-brand" href="#home" aria-label="Shelves home">
+              <BrandMark />
             </a>
             <div className="breadcrumbs">
               <span id="eyebrow">
@@ -357,30 +500,37 @@ export function App() {
               <h1>{views[view]}</h1>
             </div>
             <div className="top-actions">
-              <label className="search-box">
-                <Icon name="search" />
-                <input
-                  type="search"
-                  value={query}
-                  maxLength={120}
-                  placeholder="Find a book or author…"
-                  aria-label="Search books and authors"
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    navigate("discover");
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setQuery("");
-                  }}
-                />
-              </label>
+              {data.user ? (
+                <button
+                  className="notification-bell"
+                  onClick={() => navigate("notifications")}
+                  aria-label={`Notifications, ${data.unreadNotifications} unread`}
+                >
+                  <Icon name="bell" />
+                  {data.unreadNotifications > 0 ? (
+                    <span className="notification-count">
+                      {data.unreadNotifications > 99
+                        ? "99+"
+                        : data.unreadNotifications}
+                    </span>
+                  ) : null}
+                </button>
+              ) : null}
+              <HeaderSearch />
               {data.user ? (
                 <button
                   className="avatar avatar-you top-avatar"
                   onClick={() => navigate("profile")}
                   aria-label="Open profile"
                 >
-                  {username[0]?.toUpperCase()}
+                  <Avatar
+                    name={username}
+                    src={
+                      data.user.avatarVersion
+                        ? `/api/readers/${data.user.id}/images/avatar?v=${data.user.avatarVersion}`
+                        : undefined
+                    }
+                  />
                 </button>
               ) : (
                 <button
@@ -392,6 +542,28 @@ export function App() {
               )}
             </div>
           </header>
+          <nav
+            className={`mobile-secondary ${view === "home" ? "home-shortcuts" : ""}`}
+            aria-label="More navigation"
+          >
+            <a
+              href="#community"
+              aria-label="Reading circle"
+              title="Reading circle"
+            >
+              {view === "home" ? <Icon name="community" /> : "Reading circle"}
+            </a>
+            <a
+              href="#journal"
+              aria-label="Reading journal"
+              title="Reading journal"
+            >
+              {view === "home" ? <Icon name="journal" /> : "Reading journal"}
+            </a>
+            <a href="#lists" aria-label="Book lists" title="Book lists">
+              {view === "home" ? <Icon name="shelves" /> : "Book lists"}
+            </a>
+          </nav>
           {error ? (
             <div className="load-error" role="alert">
               <span>{error}</span>
@@ -400,14 +572,19 @@ export function App() {
               </button>
             </div>
           ) : null}
-          <div className="content-grid">
-            <section className="feed-column" aria-busy={loading}>
+          <div
+            className={`content-grid ${view === "home" ? "social-home" : ""} ${view === "terms" || view === "cookies" ? "information-grid" : ""} ${view === "author" || view === "shelves" || view === "discover" || view === "profile" || view === "reader" || ["lists", "list", "community", "readers", "journal"].includes(view) ? "collection-layout" : ""}`}
+          >
+            <section className="feed-column" aria-busy={loading} key={view}>
+              {(view === "terms" || view === "cookies") && (
+                <SiteInformation page={view} />
+              )}
               {loading ? (
                 <section className="view-panel loading-panel" role="status">
                   <span className="section-kicker">
                     OPENING YOUR READING NOOK
                   </span>
-                  <h2>A new chapter is loading…</h2>
+                  <BrandLoading label="Opening Shelves…" />
                 </section>
               ) : null}
               {!loading && view === "book" && bookId ? (
@@ -422,58 +599,198 @@ export function App() {
                   onChanged={saved}
                 />
               ) : null}
+              {!loading && (view === "lists" || view === "list") ? (
+                <Lists
+                  key={listId || "lists"}
+                  id={listId}
+                  user={data.user}
+                  onAuth={() => setAuth(true)}
+                  onBook={openBookPage}
+                />
+              ) : null}
+              {!loading && view === "moderation-accounts" ? (
+                <AdminAccounts user={data.user} />
+              ) : null}
+              {!loading && view === "safety" ? (
+                <SafetySettings user={data.user} />
+              ) : null}
+              {!loading && view === "moderation" ? (
+                <AdminReports user={data.user} />
+              ) : null}
+              {!loading && view === "settings" ? (
+                <AccountSettings
+                  user={data.user}
+                  onAuth={() => setAuth(true)}
+                  onEnded={async () => {
+                    generation.current++;
+                    setData(empty);
+                    setShelf("");
+                    await refresh();
+                  }}
+                />
+              ) : null}
+              {!loading && view === "preferences" ? (
+                <ReadingPreferences
+                  user={data.user}
+                  onAuth={() => setAuth(true)}
+                  onSaved={refresh}
+                />
+              ) : null}
+              {!loading && view === "notifications" ? (
+                data.user ? (
+                  <Notifications
+                    key={data.user.id}
+                    revision={revision}
+                    onChanged={refresh}
+                  />
+                ) : (
+                  <section className="view-panel empty-state">
+                    <h2>Your circle is waiting.</h2>
+                    <p>Sign in to see your private notifications.</p>
+                    <button
+                      className="primary-btn"
+                      onClick={() => setAuth(true)}
+                    >
+                      Sign in to see notifications
+                    </button>
+                  </section>
+                )
+              ) : null}
+              {!loading && view === "post" && postId ? (
+                <PostPage
+                  key={postId}
+                  id={postId}
+                  user={data.user}
+                  revision={revision}
+                  onLike={(p) =>
+                    void mutate(
+                      () =>
+                        api(`/posts/${p.id}/like`, {
+                          method: p.liked ? "DELETE" : "PUT",
+                        }),
+                      p.liked
+                        ? "Appreciation removed."
+                        : "Appreciation shared.",
+                    )
+                  }
+                  onComment={(p) => {
+                    if (requireUser())
+                      setComposer({ kind: "comment", post: p });
+                  }}
+                  onDelete={(p) => setComposer({ kind: "delete", post: p })}
+                />
+              ) : null}
+              {!loading && view === "reader" && readerId ? (
+                <ReaderPage
+                  key={readerId}
+                  id={readerId}
+                  user={data.user}
+                  revision={revision}
+                  busy={busy}
+                  onFollow={(following) =>
+                    void mutate(
+                      () =>
+                        api(`/readers/${readerId}/follow`, {
+                          method: following ? "DELETE" : "PUT",
+                        }),
+                      following
+                        ? "Reader unfollowed."
+                        : "Added to your reading circle.",
+                    )
+                  }
+                  onLike={(p) =>
+                    void mutate(
+                      () =>
+                        api(`/posts/${p.id}/like`, {
+                          method: p.liked ? "DELETE" : "PUT",
+                        }),
+                      p.liked
+                        ? "Appreciation removed."
+                        : "A little appreciation shared.",
+                    )
+                  }
+                  onComment={(p) => {
+                    if (requireUser())
+                      setComposer({ kind: "comment", post: p });
+                  }}
+                  onDelete={(p) => setComposer({ kind: "delete", post: p })}
+                />
+              ) : null}
               {!loading && view === "home" ? (
                 <>
-                  <section className="welcome-card">
-                    <div className="welcome-copy">
-                      <span className="eyebrow-pill">✦ YOUR DAILY PAGE</span>
-                      <h2>
-                        Stories are better
-                        <br />
-                        when <em>shared.</em>
-                      </h2>
-                      <p>
-                        A little inspiration for your reading life, one page at
-                        a time.
-                      </p>
-                      <button
-                        className="primary-btn"
-                        onClick={() =>
-                          data.user ? navigate("profile") : setAuth(true)
-                        }
-                      >
-                        {data.user
-                          ? "Set a reading goal"
-                          : "Start your reading story"}{" "}
-                        <span>↗</span>
-                      </button>
-                    </div>
-                    <div className="welcome-art" aria-hidden="true">
-                      <div className="art-sun" />
-                      <div className="art-leaf leaf-one" />
-                      <div className="art-leaf leaf-two" />
-                      <div className="art-book book-back" />
-                      <div className="art-book book-mid" />
-                      <div className="art-book book-front">
-                        <span>
-                          THE
+                  {data.user ? (
+                    <details className="home-reading-strip">
+                      <summary>
+                        <Icon name="shelves" />
+                        <span>On your nightstand</span>
+                        <b>
+                          {
+                            data.library.filter(
+                              (r) => r.status === "Currently reading",
+                            ).length
+                          }
+                        </b>
+                        <Icon name="chevron" />
+                      </summary>
+                      <CurrentlyReading
+                        records={data.library}
+                        onSaved={saved}
+                      />
+                    </details>
+                  ) : (
+                    <section className="welcome-card">
+                      <div className="welcome-copy">
+                        <span className="eyebrow-pill">✦ YOUR DAILY PAGE</span>
+                        <h2>
+                          Stories are better
                           <br />
-                          QUIET
-                          <br />
-                          WILD
-                        </span>
+                          when <em>shared.</em>
+                        </h2>
+                        <p>
+                          A little inspiration for your reading life, one page
+                          at a time.
+                        </p>
+                        <button
+                          className="primary-btn"
+                          onClick={() => setAuth(true)}
+                        >
+                          Start your reading story <span>↗</span>
+                        </button>
                       </div>
-                      <div className="art-mug">
-                        <span>〰</span>
+                      <div className="welcome-art" aria-hidden="true">
+                        <div className="art-sun" />
+                        <div className="art-leaf leaf-one" />
+                        <div className="art-leaf leaf-two" />
+                        <div className="art-book book-back" />
+                        <div className="art-book book-mid" />
+                        <div className="art-book book-front">
+                          <span>
+                            THE
+                            <br />
+                            QUIET
+                            <br />
+                            WILD
+                          </span>
+                        </div>
+                        <div className="art-mug">
+                          <span>〰</span>
+                        </div>
+                        <div className="art-steam">⌁</div>
+                        <div className="art-ground" />
                       </div>
-                      <div className="art-steam">⌁</div>
-                      <div className="art-ground" />
-                    </div>
-                    <span className="welcome-doodle">✳</span>
-                  </section>
+                      <span className="welcome-doodle">✳</span>
+                    </section>
+                  )}
                   <section className="compose-card">
                     <div className="compose-top">
-                      <Avatar name={username} />
+                      <Avatar
+                        name={username}
+                        src={
+                          data.user?.avatarVersion
+                            ? `/api/readers/${data.user.id}/images/avatar?v=${data.user.avatarVersion}`
+                            : undefined
+                        }
+                      />
                       <button
                         className="compose-placeholder"
                         onClick={startPost}
@@ -482,44 +799,60 @@ export function App() {
                         {data.user ? `, ${username.split(" ")[0]}` : ""}?
                       </button>
                     </div>
-                    <div className="compose-bottom">
-                      <span className="compose-hint">
-                        A thought, a quote, a story worth sharing.
-                      </span>
-                      <button className="outline-btn" onClick={startPost}>
-                        Create post ↗
-                      </button>
-                    </div>
+                    <button
+                      className="home-icon-button compose-send"
+                      onClick={startPost}
+                      aria-label="Create post"
+                      title="Create post"
+                    >
+                      <Icon name="journal" />
+                    </button>
                   </section>
-                  <div className="feed-heading">
-                    <div>
-                      <span className="section-kicker">
-                        FROM YOUR COMMUNITY
-                      </span>
-                      <h2>
-                        The reading room <span>✳</span>
-                      </h2>
-                    </div>
-                    <div className="feed-filters">
+                  <div className="home-feed-toolbar">
+                    <div className="feed-filters" aria-label="Feed selection">
                       {[
-                        ["all", "For you"],
-                        ["following", "Following"],
-                        ["reviews", "Reviews"],
-                      ].map(([key, label]) => (
+                        ["all", "For you", "sparkles"],
+                        ["following", "Following", "community"],
+                        ["latest", "Latest", "clock"],
+                        ["reviews", "Reviews", "star"],
+                      ].map(([key, label, icon]) => (
                         <button
                           key={key}
                           className={`filter-btn ${filter === key ? "active" : ""}`}
                           onClick={() => setFilter(key)}
                           aria-pressed={filter === key}
                         >
-                          {label}
+                          <Icon name={icon} />
+                          <span>{label}</span>
                         </button>
                       ))}
                     </div>
+                    <button
+                      className="home-icon-button"
+                      aria-label="Refresh feed"
+                      title="Refresh feed"
+                      disabled={feedPage.busy}
+                      onClick={() => setRevision((v) => v + 1)}
+                    >
+                      <Icon name="refresh" />
+                    </button>
                   </div>
+                  <details className="feed-explanation">
+                    <summary>
+                      <Icon name="info" />
+                      <span>How your feed works</span>
+                    </summary>
+                    <p>
+                      For you balances recent conversations, people you follow
+                      and books or genres you have publicly reviewed highly.
+                      Private notes and reading progress are never used. Latest
+                      shows posts in date order.
+                    </p>
+                  </details>
                   <div className="feed-list">
                     {visiblePosts.map((p) => (
                       <PostCard
+                        compact
                         key={p.id}
                         post={p}
                         user={data.user}
@@ -543,26 +876,33 @@ export function App() {
                         }
                       />
                     ))}
-                    {!visiblePosts.length ? (
+                    <FeedMore feed={feedPage} />
+                    {!visiblePosts.length &&
+                    !feedPage.busy &&
+                    !feedPage.error ? (
                       <section className="view-panel empty-state">
                         <span className="section-kicker">
                           GOOD CONVERSATIONS START SMALL
                         </span>
                         <h2>
                           {filter === "following"
-                            ? "Build your reading circle."
+                            ? data.stats?.following
+                              ? "Your reading circle is quiet."
+                              : "Build your reading circle."
                             : "The next story could be yours."}
                         </h2>
                         <p>
                           {filter === "following"
-                            ? "Follow other readers to see their public notes here."
+                            ? data.stats?.following
+                              ? "New public reviews, posts and shared reading progress from your circle will appear here."
+                              : "Follow other readers to see their public reviews, posts and shared reading progress here."
                             : "Share a thought about what you are reading, or find your next book."}
                         </p>
                         <button
                           className="primary-btn"
                           onClick={() =>
                             filter === "following"
-                              ? navigate("community")
+                              ? navigate("readers")
                               : startPost()
                           }
                         >
@@ -573,61 +913,87 @@ export function App() {
                       </section>
                     ) : null}
                   </div>
-                  <section className="view-panel">
-                    <span className="section-kicker">
-                      MADE FOR YOUR NEXT CHAPTER
-                    </span>
-                    <h2>Something good is waiting.</h2>
-                    <div className="book-grid">
-                      {data.recommendations.slice(0, 3).map((b) => (
-                        <BookCard
-                          key={b.id}
-                          book={b}
-                          reason={b.reason}
-                          onOpen={openBookPage}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      className="plain-link"
-                      onClick={() => navigate("discover")}
-                    >
-                      Explore all picks ↗
-                    </button>
-                  </section>
                 </>
               ) : null}
+              {!loading && view === "readers" ? (
+                <ReaderDirectory
+                  user={data.user}
+                  onAuth={() => setAuth(true)}
+                  onChanged={refresh}
+                />
+              ) : null}
+              {!loading && view === "author" ? (
+                <AuthorPage onBook={openBookPage} />
+              ) : null}
+              {!loading && view === "catalog" ? (
+                <Catalog onBook={openBookPage} />
+              ) : null}
               {!loading && view === "discover" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    {query.trim().length >= 2
-                      ? "FOLLOW YOUR CURIOSITY"
-                      : "MADE FOR YOU"}
-                  </span>
-                  <h2>
-                    {query.trim().length >= 2
-                      ? "A story to look for."
-                      : "Find your next favorite."}
-                  </h2>
+                <section className="view-panel discover-page">
+                  <div className="collection-heading">
+                    <h2>
+                      {query.trim().length >= 2
+                        ? "Search results"
+                        : "Recommended for you"}
+                    </h2>
+                    <a className="plain-link" href="#catalog">
+                      Browse catalogue by genre and year ↗
+                    </a>
+                  </div>
                   <p className="view-intro">
                     {query.trim().length >= 2
-                      ? "Search real books by title or author."
-                      : "Picks shaped by your saved books and ratings. A different path is always welcome."}
+                      ? "Choose a book to see its details and editions."
+                      : data.user
+                        ? "Picks shaped by your reading. Each book includes why it was selected."
+                        : "Start with the Shelves collection, or search for a title you know."}
                   </p>
-                  <label className="discover-search">
-                    Book title or author
-                    <input
-                      type="search"
-                      value={query}
-                      maxLength={120}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Try Ursula K. Le Guin"
-                    />
-                  </label>
+                  <div className="discovery-toolbar">
+                    <label className="discover-search">
+                      Book title or author
+                      <input
+                        type="search"
+                        value={query}
+                        maxLength={120}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onCompositionStart={() => setSearchComposing(true)}
+                        onCompositionEnd={() => setSearchComposing(false)}
+                        placeholder="Try Ursula K. Le Guin"
+                      />
+                      {query ? (
+                        <button
+                          type="button"
+                          className="plain-link"
+                          onClick={(e) => {
+                            setQuery("");
+                            e.currentTarget.parentElement
+                              ?.querySelector("input")
+                              ?.focus();
+                          }}
+                        >
+                          Clear search
+                        </button>
+                      ) : null}
+                    </label>
+                    <div className="library-tools">
+                      <LanguageSelect
+                        value={searchLanguage}
+                        onChange={setSearchLanguage}
+                        label="Search language"
+                      />
+                    </div>
+                  </div>
                   {searching ? (
-                    <p role="status">Looking through the catalog…</p>
+                    <BrandLoading label="Looking through the catalogue…" />
                   ) : null}
                   <ErrorMessage message={searchError} />
+                  {searchError ? (
+                    <button
+                      className="outline-btn"
+                      onClick={() => setSearchRetry((n) => n + 1)}
+                    >
+                      Retry search
+                    </button>
+                  ) : null}
                   {search?.warning ? (
                     <p className="catalog-warning" role="status">
                       {search.warning}
@@ -638,7 +1004,7 @@ export function App() {
                       {search.items.length} results · {search.source}
                     </p>
                   ) : null}
-                  <div className="book-grid">
+                  <div className="book-grid collection-books">
                     {(query.trim().length >= 2
                       ? search?.items || []
                       : data.recommendations
@@ -672,28 +1038,32 @@ export function App() {
                       <p>
                         {query.trim().length >= 2
                           ? "No matches. Try another title or author."
-                          : "You have explored the current picks. Search the catalog for something new."}
+                          : "No strong matches in the current catalog. Try a book search or update your reading preferences."}
                       </p>
                     </div>
                   ) : null}
                 </section>
               ) : null}
               {!loading && view === "shelves" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    A LIBRARY THAT IS ALL YOURS
-                  </span>
-                  <h2>{shelfTitle}</h2>
-                  <p className="view-intro">
-                    The stories you have met, and the ones still calling your
-                    name.
-                  </p>
+                <section className="view-panel library-page">
+                  <div className="collection-heading">
+                    <h2>{shelfTitle}</h2>
+                    {data.user ? (
+                      <button
+                        className="outline-btn"
+                        onClick={() => setComposer({ kind: "shelf" })}
+                      >
+                        + New shelf
+                      </button>
+                    ) : null}
+                  </div>
                   {data.user ? (
                     <>
                       <div className="library-tabs">
                         <button
                           className={`outline-btn ${!shelf ? "selected" : ""}`}
-                          onClick={() => setShelf("")}
+                          aria-pressed={!shelf}
+                          onClick={() => navigate("shelves")}
                         >
                           All books
                         </button>
@@ -701,28 +1071,91 @@ export function App() {
                           <button
                             key={s}
                             className={`outline-btn ${shelf === s ? "selected" : ""}`}
-                            onClick={() => setShelf(s)}
+                            aria-pressed={shelf === s}
+                            onClick={() => navigate("shelves", s)}
                           >
                             {s}
                           </button>
                         ))}
-                        <button
-                          className="outline-btn"
-                          onClick={() => setComposer({ kind: "shelf" })}
-                        >
-                          + New shelf
-                        </button>
                         {data.shelves.map((s) => (
                           <button
                             className={`outline-btn ${shelf === s.id ? "selected" : ""}`}
+                            aria-pressed={shelf === s.id}
                             key={s.id}
-                            onClick={() => setShelf(s.id)}
+                            onClick={() => navigate("shelves", s.id)}
                           >
                             {s.name}
                           </button>
                         ))}
                       </div>
-                      <div className="book-grid">
+                      {selectedShelf ? (
+                        <div className="shelf-actions">
+                          <button
+                            className="plain-link"
+                            onClick={() =>
+                              setShelfAction({
+                                shelf: selectedShelf,
+                                deleting: false,
+                              })
+                            }
+                          >
+                            Rename shelf
+                          </button>
+                          <button
+                            className="plain-link danger-button"
+                            onClick={() =>
+                              setShelfAction({
+                                shelf: selectedShelf,
+                                deleting: true,
+                              })
+                            }
+                          >
+                            Delete shelf
+                          </button>
+                        </div>
+                      ) : null}
+                      <div className="library-tools library-toolbar">
+                        <label>
+                          Search my library
+                          <input
+                            type="search"
+                            value={libraryQuery}
+                            maxLength={120}
+                            onChange={(e) => setLibraryQuery(e.target.value)}
+                            placeholder="Title or author"
+                          />
+                        </label>
+                        {libraryQuery ? (
+                          <button
+                            className="plain-link"
+                            onClick={(e) => {
+                              setLibraryQuery("");
+                              e.currentTarget.parentElement
+                                ?.querySelector("input")
+                                ?.focus();
+                            }}
+                          >
+                            Clear library search
+                          </button>
+                        ) : null}
+                        <label>
+                          Sort books
+                          <select
+                            value={librarySort}
+                            onChange={(e) => setLibrarySort(e.target.value)}
+                          >
+                            <option value="recent">Recently updated</option>
+                            <option value="title">Title A–Z</option>
+                            <option value="author">Author A–Z</option>
+                            <option value="rating">Highest rated</option>
+                          </select>
+                        </label>
+                      </div>
+                      <p className="search-source">
+                        {filteredLibrary.length}{" "}
+                        {filteredLibrary.length === 1 ? "book" : "books"}
+                      </p>
+                      <div className="book-grid collection-books">
                         {filteredLibrary.map((r) => (
                           <BookCard
                             key={r.bookId}
@@ -734,7 +1167,11 @@ export function App() {
                       </div>
                       {!filteredLibrary.length ? (
                         <div className="empty-state">
-                          <p>No books here yet. Find one that calls to you.</p>
+                          <p>
+                            {libraryQuery
+                              ? "No books match this search. Try another title or author."
+                              : "No books here yet. Find one that calls to you."}
+                          </p>
                           <button
                             className="primary-btn"
                             onClick={() => navigate("discover")}
@@ -758,20 +1195,87 @@ export function App() {
                 </section>
               ) : null}
               {!loading && view === "community" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">FIND YOUR PEOPLE</span>
-                  <h2>There is room in the circle.</h2>
-                  <p className="view-intro">
-                    Real readers, shared curiosity, and your next good
-                    conversation.
-                  </p>
+                <section className="view-panel community-garden">
+                  <div className="community-intro">
+                    <div>
+                      <span className="page-emblem" aria-hidden="true">
+                        <Icon name="community" />
+                      </span>
+                      <h2>Your reading circle</h2>
+                      <p className="view-intro">
+                        Find readers through the books you both love.
+                      </p>
+                      <details className="feed-explanation">
+                        <summary>How matches work</summary>
+                        <p>
+                          Reader matches use public four- and five-star reviews.
+                        </p>
+                      </details>
+                      <div className="account-actions">
+                        {data.user ? (
+                          <a
+                            className="visual-icon-action"
+                            aria-label="Readers you follow"
+                            title="Readers you follow"
+                            href={`#readers?scope=following&reader=${data.user.id}`}
+                          >
+                            <Icon name="community" />
+                          </a>
+                        ) : null}
+                        <a
+                          className="visual-icon-action"
+                          href="#readers"
+                          aria-label="Search readers and explore connections"
+                          title="Search readers"
+                        >
+                          <Icon name="search" />
+                        </a>
+                      </div>
+                    </div>
+                    <img
+                      className="reading-garden-art"
+                      src="/art/reading-garden.svg"
+                      width="360"
+                      height="280"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="community-directory-heading">
+                    <h3>Readers to know</h3>
+                    <a
+                      href="#lists"
+                      className="visual-icon-action"
+                      aria-label="Explore community book lists"
+                      title="Explore community book lists"
+                    >
+                      <Icon name="shelves" />
+                    </a>
+                  </div>
                   {data.readers.map((r) => (
                     <div className="person-row community-row" key={r.id}>
-                      <Avatar name={r.displayName} />
+                      <Avatar
+                        name={r.displayName}
+                        src={
+                          r.avatarVersion
+                            ? `/api/readers/${r.id}/images/avatar?v=${r.avatarVersion}`
+                            : undefined
+                        }
+                      />
                       <div className="person-info">
-                        <strong>{r.displayName}</strong>
+                        <a className="reader-link" href={`#reader/${r.id}`}>
+                          <strong>
+                            <ReaderName
+                              name={r.displayName}
+                              verified={r.isAdmin}
+                            />
+                          </strong>
+                        </a>
                         <small>@{r.username}</small>
-                        <p>{r.bio || "A new chapter on Shelves."}</p>
+                        {r.bio ? <p>{r.bio}</p> : null}
+                        {r.reason ? (
+                          <small className="reader-match">{r.reason}</small>
+                        ) : null}
                       </div>
                       <button
                         className={`follow-btn ${r.following ? "following" : ""}`}
@@ -803,18 +1307,32 @@ export function App() {
                 </section>
               ) : null}
               {!loading && view === "journal" ? (
-                <section className="view-panel">
-                  <span className="section-kicker">
-                    YOUR PRIVATE READING JOURNAL
-                  </span>
-                  <h2>Little things worth remembering.</h2>
-                  <p className="view-intro">
-                    Your private reviews, gathered from your reading records.
-                  </p>
+                <section className="view-panel journal-page">
+                  <div className="visual-page-heading">
+                    <span className="page-emblem" aria-hidden="true">
+                      <Icon name="journal" />
+                    </span>
+                    <div>
+                      <h2>Reading journal</h2>
+                      <p className="view-intro icon-label">
+                        <Icon name="lock" />
+                        Private notes, just for you.
+                      </p>
+                    </div>
+                    <a
+                      href="#shelves"
+                      className="visual-icon-action"
+                      aria-label="Visit my shelves"
+                      title="Visit my shelves"
+                    >
+                      <Icon name="shelves" />
+                    </a>
+                  </div>
                   {data.library
                     .filter((r) => r.review)
                     .map((r) => (
                       <article className="journal-entry" key={r.bookId}>
+                        <Cover book={r.book} small />
                         <div className="journal-date">
                           {r.rating ? `${r.rating} / 5` : "A NOTE"}
                         </div>
@@ -830,7 +1348,13 @@ export function App() {
                       </article>
                     ))}
                   {!data.library.some((r) => r.review) ? (
-                    <div className="empty-state">
+                    <div className="visual-empty">
+                      <img
+                        src="/art/reading-garden.svg"
+                        alt=""
+                        width="180"
+                        height="140"
+                      />
                       <p>
                         Open a book and leave a private review to begin your
                         journal.
@@ -839,159 +1363,195 @@ export function App() {
                         className="primary-btn"
                         onClick={() => navigate("shelves")}
                       >
-                        Visit my shelves ↗
+                        <Icon name="shelves" /> Visit my shelves ↗
                       </button>
                     </div>
                   ) : null}
                 </section>
               ) : null}
               {!loading && view === "profile" ? (
-                <section className="view-panel">
-                  {data.user ? (
-                    <>
-                      <div className="profile-hero">
-                        <Avatar name={username} />
-                        <div>
-                          <span className="section-kicker">
-                            YOUR READING LIFE
-                          </span>
-                          <h2>{username}</h2>
-                          <p>@{data.user.username}</p>
-                          <div className="profile-stats">
-                            <span>
-                              <b>{data.stats?.followers || 0}</b> followers
-                            </span>
-                            <span>
-                              <b>{data.stats?.following || 0}</b> following
-                            </span>
-                            <span>
-                              <b>{finished}</b> books finished this year
-                            </span>
+                data.user ? (
+                  <div className="profile-page">
+                    <ProfileIdentity
+                      reader={data.user}
+                      followers={data.stats?.followers || 0}
+                      following={data.stats?.following || 0}
+                    />
+                    <div className="profile-workspace grid min-w-0 gap-6 min-[1200px]:grid-cols-[minmax(0,1fr)_320px]">
+                      <div className="grid min-w-0 gap-6">
+                        <section className="view-panel profile-tools">
+                          <div className="account-actions">
+                            <button className="primary-btn" onClick={startPost}>
+                              Write a post
+                            </button>
+                            <a
+                              className="outline-btn"
+                              href={`#reader/${data.user.id}`}
+                            >
+                              View my public profile ↗
+                            </a>
+                            <button
+                              className="plain-link"
+                              disabled={busy}
+                              onClick={() => void signOut()}
+                            >
+                              Sign out
+                            </button>
                           </div>
-                        </div>
+                          <p>
+                            {finished} of {goal} books finished this year ·{" "}
+                            {data.stats?.pages || 0} pages tracked
+                          </p>
+                          <progress
+                            aria-label="Yearly reading goal"
+                            value={finished}
+                            max={goal}
+                          />
+                          <details className="profile-edit">
+                            <summary>Edit profile and reading goal</summary>
+                            <ProfileForm user={data.user} onSaved={saved} />
+                          </details>
+                        </section>
+                        <CurrentlyReading
+                          records={data.library}
+                          onSaved={saved}
+                        />
+                        <ReaderPage
+                          key={data.user.id}
+                          wallOnly
+                          id={data.user.id}
+                          user={data.user}
+                          revision={revision}
+                          busy={busy}
+                          onFollow={() => {}}
+                          onLike={(p) =>
+                            void mutate(
+                              () =>
+                                api(`/posts/${p.id}/like`, {
+                                  method: p.liked ? "DELETE" : "PUT",
+                                }),
+                              "Appreciation updated.",
+                            )
+                          }
+                          onComment={(p) =>
+                            setComposer({ kind: "comment", post: p })
+                          }
+                          onDelete={(p) =>
+                            setComposer({ kind: "delete", post: p })
+                          }
+                        />
                       </div>
-                      <h2>Your year between the pages</h2>
-                      <p>
-                        {data.stats?.pages || 0} pages tracked ·{" "}
-                        {data.stats?.reading || 0} books in progress
-                      </p>
-                      <div className="goal-number">
-                        <strong>{finished}</strong>
-                        <span>of {goal} books this year</span>
-                      </div>
-                      <div
-                        className="goal-track"
-                        role="progressbar"
-                        aria-label="Yearly reading goal"
-                        aria-valuenow={pct}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      >
-                        <span style={{ width: `${pct}%` }} />
-                      </div>
-                      <ProfileForm
-                        user={data.user}
-                        onSaved={async () => {
-                          await saved();
-                        }}
-                      />
-                      <button
-                        className="outline-btn"
-                        disabled={busy}
-                        onClick={() => void signOut()}
-                      >
-                        Sign out
-                      </button>
-                    </>
-                  ) : (
-                    <div className="empty-state">
-                      <h2>Your reading life belongs here.</h2>
-                      <p>
-                        Create an account to keep your library and goal
-                        together.
-                      </p>
-                      <button
-                        className="primary-btn"
-                        onClick={() => setAuth(true)}
-                      >
-                        Join Shelves ↗
-                      </button>
+                      <ProfileManagement user={data.user} onSaved={saved} />
                     </div>
-                  )}
-                </section>
+                  </div>
+                ) : (
+                  <section className="view-panel empty-state">
+                    <h2>Your reading life belongs here.</h2>
+                    <p>
+                      Create an account to keep your library and goal together.
+                    </p>
+                    <button
+                      className="primary-btn"
+                      onClick={() => setAuth(true)}
+                    >
+                      Join Shelves ↗
+                    </button>
+                  </section>
+                )
               ) : null}
             </section>
             <aside className="right-rail">
-              {data.books[0] ? (
+              {spotlight && view !== "home" ? (
                 <section className="rail-card book-pick-card">
                   <span className="section-kicker">A LITTLE INSPIRATION</span>
                   <h3>Today's book nook</h3>
                   <div className="pick-book">
-                    <Cover book={data.books[0]} small />
+                    <Cover book={spotlight} small />
                     <div className="pick-info">
-                      <span className="tag tag-sage">
-                        {data.books[0].genre}
-                      </span>
-                      <h4>{data.books[0].title}</h4>
-                      <p>{data.books[0].author}</p>
-                      <button
-                        className="outline-btn"
-                        onClick={() => openBookPage(data.books[0])}
-                      >
-                        View book ↗
-                      </button>
+                      <span className="tag tag-sage">{spotlight.genre}</span>
+                      <h4>
+                        <a
+                          className="book-open"
+                          href={`#book/${spotlight.id}`}
+                          aria-label={`Read about ${spotlight.title}`}
+                        >
+                          {spotlight.title}
+                        </a>
+                      </h4>
+                      <p>{spotlight.author}</p>
                     </div>
                   </div>
-                  <p className="pick-quote">
-                    “Where you tend a rose, my lad, a thistle cannot grow.”
-                  </p>
                 </section>
               ) : null}
-              <section className="rail-card goal-card">
-                <div className="rail-heading">
-                  <div>
-                    <span className="section-kicker">
-                      YOUR {new Date().getFullYear()} JOURNEY
-                    </span>
-                    <h3>Pages in progress</h3>
+              {view !== "home" ? (
+                <section className="rail-card goal-card">
+                  <div className="rail-heading">
+                    <div>
+                      <span className="section-kicker">
+                        YOUR {new Date().getFullYear()} JOURNEY
+                      </span>
+                      <h3>Pages in progress</h3>
+                    </div>
+                    <button
+                      className="plain-arrow"
+                      aria-label="Edit reading goal"
+                      onClick={() =>
+                        data.user ? navigate("profile") : setAuth(true)
+                      }
+                    >
+                      ↗
+                    </button>
                   </div>
-                  <button
-                    className="plain-arrow"
-                    aria-label="Edit reading goal"
-                    onClick={() =>
-                      data.user ? navigate("profile") : setAuth(true)
-                    }
-                  >
-                    ↗
-                  </button>
-                </div>
-                <div className="goal-number">
-                  <strong>{finished}</strong>
-                  <span>of {goal} books</span>
-                  <b className="goal-percent">{pct}%</b>
-                </div>
-                <div className="goal-track">
-                  <span style={{ width: `${pct}%` }} />
-                </div>
-                <div className="goal-caption">
-                  <span>{Math.max(0, goal - finished)} books to go</span>
-                  <span>One page at a time.</span>
-                </div>
-                {!data.user ? (
-                  <button className="plain-link" onClick={() => setAuth(true)}>
-                    Set your own goal ↗
-                  </button>
-                ) : null}
-              </section>
+                  <div className="goal-number">
+                    <strong>{finished}</strong>
+                    <span>of {goal} books</span>
+                    <b className="goal-percent">{pct}%</b>
+                  </div>
+                  <div className="goal-track">
+                    <span style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="goal-caption">
+                    <span>{Math.max(0, goal - finished)} books to go</span>
+                    <span>One page at a time.</span>
+                  </div>
+                  {!data.user ? (
+                    <button
+                      className="plain-link"
+                      onClick={() => setAuth(true)}
+                    >
+                      Set your own goal ↗
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
               <section className="rail-card people-card">
-                <span className="section-kicker">GOOD COMPANY</span>
+                {view !== "home" ? (
+                  <span className="section-kicker">GOOD COMPANY</span>
+                ) : null}
                 <h3>Readers to know</h3>
                 {data.readers.slice(0, 3).map((r) => (
                   <div className="person-row" key={r.id}>
-                    <Avatar name={r.displayName} />
+                    <Avatar
+                      name={r.displayName}
+                      src={
+                        r.avatarVersion
+                          ? `/api/readers/${r.id}/images/avatar?v=${r.avatarVersion}`
+                          : undefined
+                      }
+                    />
                     <div className="person-info">
-                      <strong>{r.displayName}</strong>
+                      <a className="reader-link" href={`#reader/${r.id}`}>
+                        <strong>
+                          <ReaderName
+                            name={r.displayName}
+                            verified={r.isAdmin}
+                          />
+                        </strong>
+                      </a>
                       <small>@{r.username}</small>
+                      {r.reason ? (
+                        <small className="reader-match">{r.reason}</small>
+                      ) : null}
                     </div>
                     <button
                       className={`follow-btn ${r.following ? "following" : ""}`}
@@ -1022,15 +1582,18 @@ export function App() {
                   className="outline-btn full-width"
                   onClick={() => navigate("community")}
                 >
-                  Explore your reading circle ↗
+                  {view === "home" ? (
+                    <>
+                      <Icon name="community" /> Find readers
+                    </>
+                  ) : (
+                    "Explore your reading circle ↗"
+                  )}
                 </button>
               </section>
-              <footer className="rail-footer">
-                <span>Made with a little bookish magic ✳</span>
-                <span>© Shelves {new Date().getFullYear()}</span>
-              </footer>
             </aside>
           </div>
+          <SiteFooter />
         </main>
       </div>
       <nav className="mobile-nav" aria-label="Mobile navigation">
@@ -1086,6 +1649,17 @@ export function App() {
           post={composer.post}
           onClose={() => setComposer(null)}
           onSaved={saved}
+        />
+      ) : null}
+      {shelfAction ? (
+        <ShelfDialog
+          shelf={shelfAction.shelf}
+          deleting={shelfAction.deleting}
+          onClose={() => setShelfAction(null)}
+          onSaved={async () => {
+            await saved();
+            if (shelfAction.deleting) navigate("shelves");
+          }}
         />
       ) : null}
       <div
