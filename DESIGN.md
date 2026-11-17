@@ -49,7 +49,7 @@ The shelf occupies the width of the Home stage, with recommendations and actions
 
 ## Components
 
-- **Brand** uses the original animated SVG in a burnt-orange palette. The wordmark uses a lighter orange on dark surfaces. Reduced motion displays the final mark immediately.
+- **Brand** uses the original animated SVG in a burnt-orange palette. The wordmark uses a lighter orange on dark surfaces. Its book-stacking reveal starts on every full page load; in-app navigation keeps the mark settled. Reduced motion displays the final mark immediately.
 - **Authentication** uses a two-column layout with a greeting beside the form. On phones the greeting sits above the fields. The name or username updates as the reader types and uses the brand accent.
 - **Home recommendations** use the server-ranked snapshot shared with Discover. The first pick previews by default. Hover or focus previews another pick. Click, tap, or keyboard activation opens that book’s detail page. The selected preview stays active as the reader moves to View book. Fewer available recommendations result in fewer visible books.
 - **Book details** give the real jacket a large place on a shallow reading stage. Title, author, public rating and the primary library action sit beside it; description and factual edition information occupy a calmer lower split. On phones these become one readable column. Book jackets supply the strongest color rather than a page-wide decorative image.

@@ -73,10 +73,10 @@ const { auditLayout } = require("./layout.cjs");
       });
     });
     await page.goto(base + "/#home");
-    await page.locator(".book-tile").first().waitFor();
     const input = page.getByRole("combobox", {
       name: "Search books and authors",
     });
+    await input.waitFor();
     await input.fill("slow");
     await page.getByText("Finding books…", { exact: true }).waitFor();
     await page.locator(".quick-search-panel .brand-loading img").waitFor();
@@ -153,10 +153,13 @@ const { auditLayout } = require("./layout.cjs");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(base + "/#home");
     await page.locator(".mobile-brand img").waitFor();
-    assert.equal(
-      await page.locator(".mobile-brand img").getAttribute("src"),
-      "/branding/shelves.svg",
-    );
+    const firstLogoUrl = await page.locator(".mobile-brand img").getAttribute("src");
+    assert.match(firstLogoUrl, /^\/branding\/shelves\.svg\?load=/);
+    await page.reload();
+    await page.locator(".mobile-brand img").waitFor();
+    const replayedLogoUrl = await page.locator(".mobile-brand img").getAttribute("src");
+    assert.match(replayedLogoUrl, /^\/branding\/shelves\.svg\?load=/);
+    assert.notEqual(replayedLogoUrl, firstLogoUrl);
     assert.deepEqual(errors, []);
     console.log(
       "Inline search passed: no navigation while typing, loading, cancellation, pagination, empty/retry, IME, keyboard selection, supplied SVG and responsive layouts.",

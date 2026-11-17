@@ -1,8 +1,12 @@
+// Keep one SVG instance per page load so its internal animation restarts on reload.
+// Route changes reuse this URL and do not replay the mark.
+const brandMarkUrl = `/branding/shelves.svg?load=${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 export function BrandMark() {
   return (
     <img
       className="shelves-logo"
-      src="/branding/shelves.svg"
+      src={brandMarkUrl}
       alt="Shelves"
       width="308"
       height="84"
