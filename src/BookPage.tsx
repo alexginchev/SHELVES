@@ -395,8 +395,8 @@ export function BookPage({
         <h3>About this book</h3>
         <p className="book-description">{book.description}</p>
         {data.metadata ? (
-          <div className="edition-details">
-            <h3>This edition</h3>
+          <details className="edition-details">
+            <summary>Publication details</summary>
             <EditionFacts book={book} metadata={data.metadata} />
             <div className="book-metadata">
               {data.metadata.tags.map((tag) => (
@@ -421,7 +421,7 @@ export function BookPage({
                 Explore related editions ↗
               </a>
             </p>
-          </div>
+          </details>
         ) : null}
         {/^OL\d+W$/.test(book.id) ? (
           <a
@@ -440,43 +440,61 @@ export function BookPage({
         className="view-panel book-reviews"
         aria-label="Public book reviews"
       >
-        <span className="section-kicker">BETWEEN READERS</span>
-        <h2>What the community thinks.</h2>
-        <p className="view-intro">
-          Public reviews from readers. Spoilers stay tucked away until you open
-          them.
-        </p>
-        <div className="library-tools">
-          <label>
-            Review order
-            <select
-              value={reviewSort}
-              onChange={(e) => changeReviewFilter("reviewSort", e.target.value)}
-            >
-              <option value="recent">Recent</option>
-              <option value="appreciated">Most appreciated</option>
-            </select>
-          </label>
-          <label>
-            Review readers
-            <select
-              value={reviewFilter}
-              onChange={(e) =>
-                changeReviewFilter("reviewFilter", e.target.value)
-              }
-            >
-              <option value="all">Everyone</option>
-              <option value="following">Following</option>
-            </select>
-          </label>
-          <button
-            className="outline-btn"
-            disabled={reviews.busy || busy}
-            onClick={() => setReviewRevision((n) => n + 1)}
-          >
-            Refresh reviews
-          </button>
+        <div className="book-reviews-heading">
+          <h2>Reader reviews</h2>
+          <span>
+            {reviews.items.length}{" "}
+            {reviews.items.length === 1 ? "review" : "reviews"}
+          </span>
         </div>
+        <details className="review-controls">
+          <summary>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            Sort and filter
+          </summary>
+          <div className="library-tools">
+            <label>
+              Review order
+              <select
+                value={reviewSort}
+                onChange={(e) =>
+                  changeReviewFilter("reviewSort", e.target.value)
+                }
+              >
+                <option value="recent">Recent</option>
+                <option value="appreciated">Most appreciated</option>
+              </select>
+            </label>
+            <label>
+              Review readers
+              <select
+                value={reviewFilter}
+                onChange={(e) =>
+                  changeReviewFilter("reviewFilter", e.target.value)
+                }
+              >
+                <option value="all">Everyone</option>
+                <option value="following">Following</option>
+              </select>
+            </label>
+            <button
+              className="outline-btn"
+              disabled={reviews.busy || busy}
+              onClick={() => setReviewRevision((n) => n + 1)}
+            >
+              Refresh reviews
+            </button>
+          </div>
+        </details>
         {reviewSort === "appreciated" ? (
           <p className="local-note">
             Appreciations can change the order. Refresh to see the latest

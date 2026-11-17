@@ -76,6 +76,8 @@ const { auditLayout } = require("./layout.cjs");
       } else await route.continue();
     });
     await page.goto(base + "/#book/gb_edition_0");
+    const editions = page.locator(".book-editions");
+    await editions.locator("summary").first().click();
     await page
       .getByRole("alert")
       .filter({ hasText: "Edition list unavailable." })
@@ -132,6 +134,7 @@ const { auditLayout } = require("./layout.cjs");
       .waitFor();
     assert(page.url().includes("language=bg"));
     await page.reload();
+    await editions.locator("summary").first().click();
     await page
       .getByText("1 matching edition · Page 1 of 1", { exact: true })
       .waitFor();
@@ -172,6 +175,7 @@ const { auditLayout } = require("./layout.cjs");
     );
     assert.equal(library.find((r) => r.book.id === "gb_edition_0").page, 42);
     assert.equal(library.find((r) => r.book.id === "gb_edition_13").page, 10);
+    await editions.locator("summary").first().click();
     await page
       .getByLabel("Edition language", { exact: true })
       .selectOption("fr");
