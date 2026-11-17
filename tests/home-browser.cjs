@@ -247,7 +247,10 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByRole("link", { name: "View Piranesi" }).click();
     await page.waitForURL("**/#book/seed-piranesi");
 
-    const guest = await browser.newPage();
+    const guest = await browser.newPage({
+      viewport: { width: 651, height: 603 },
+      hasTouch: true,
+    });
     await guest.goto(base + "/#home");
     const featured = guest.frameLocator(
       'iframe[title="Interactive featured book collection"]',
@@ -266,6 +269,28 @@ const { auditLayout } = require("./layout.cjs");
     await guest.getByRole("link", { name: "View Piranesi" }).waitFor();
     await piranesi.press("Enter");
     await guest.waitForURL("**/#book/seed-piranesi");
+    await guest.goto(base + "/#home");
+    await piranesi.click();
+    await guest.waitForURL("**/#book/seed-piranesi");
+    await guest.goto(base + "/#home");
+    const spine = featured.getByRole("button", {
+      name: "Small Things Like These",
+      exact: true,
+    });
+    assert(
+      await spine.locator(".side-book__title").evaluate((title) => {
+        const label = title.getBoundingClientRect();
+        const book = title.parentElement.getBoundingClientRect();
+        return (
+          label.left >= book.left &&
+          label.right <= book.right &&
+          label.top >= book.top &&
+          label.bottom <= book.bottom
+        );
+      }),
+    );
+    await spine.tap();
+    await guest.waitForURL("**/#book/seed-smallthings");
     await guest.goto(base + "/#home");
     await guest.getByRole("button", { name: "Switch to light mode" }).click();
     await featured.locator("body:not(.dark-mode)").waitFor();

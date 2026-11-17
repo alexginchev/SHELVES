@@ -48,15 +48,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   for (const book of books) {
     if (book.closest("[hidden]")) continue;
-    const show = () => book.dispatchEvent(new MouseEvent("mouseenter"));
-    enableKeyboard(book, book.dataset.bookTitle, () => {
+    const openBook = () => {
       window.parent.postMessage(
         { type: "featured-shelf-open", id: book.dataset.bookId },
         parentOrigin,
       );
-    });
-    book.addEventListener("focus", show);
-    book.addEventListener("click", show);
+    };
+    enableKeyboard(book, book.dataset.bookTitle, openBook);
+    book.addEventListener("focus", () =>
+      book.dispatchEvent(new MouseEvent("mouseenter")),
+    );
+    book.addEventListener("click", openBook);
   }
   preview.addEventListener(
     "mouseleave",

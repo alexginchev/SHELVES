@@ -75,10 +75,29 @@ body {
   margin-top: 0.55rem;
 }
 
+.side-book {
+  --spine-rule-gap: 12px;
+}
+
 .side-book__title {
+  inset: calc(var(--spine-rule-gap) + 5px) 2px;
+  display: block;
+  align-content: center;
+  width: auto;
+  height: auto;
+  padding: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  padding-block: 18px;
+  pointer-events: none;
+}
+
+.side-book__decoration {
+  top: var(--spine-rule-gap);
+}
+
+.side-book__decoration:nth-child(2) {
+  bottom: var(--spine-rule-gap);
 }
 
 .shelf-jacket-fallback {
@@ -155,6 +174,7 @@ body {
     height: var(--cover-height);
   }
   .side-book {
+    --spine-rule-gap: 6px;
     width: clamp(15px, 4.8vw, 26px);
   }
   .side-book__title {

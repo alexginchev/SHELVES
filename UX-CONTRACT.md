@@ -30,7 +30,7 @@ Loading, retry, empty and end states stay in the review panel. Failed refreshes 
 
 React/TypeScript owns rendering. Express owns validation, authorization, persistence and recommendations. Supabase PostgreSQL is the configured source of truth; SQLite remains an explicit offline option. The browser-only implementation is archived under prototype/. English UI uses browser-local display dates; stored timestamps use UTC.
 
-Home shows up to four ranked recommendations from the same snapshot as Discover. The highest-ranked book is selected on entry. Hover, keyboard focus and tap select a book and update its description and View book link. When there are no matching picks, Home offers a link to Discover. Theme selection lives in the main header, persists across reloads and applies to the shelf.
+Home shows up to four ranked recommendations from the same snapshot as Discover. The highest-ranked book is selected on entry. Hover and keyboard focus update the preview and View book link. Clicking, tapping, or activating a book with the keyboard opens its detail page. When there are no matching picks, Home offers a link to Discover. Theme selection lives in the main header, persists across reloads and applies to the shelf.
 
 ## Canonical UI map
 
