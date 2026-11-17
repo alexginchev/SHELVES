@@ -47,6 +47,7 @@ import { ReaderPage } from "./ReaderPage";
 import { Notifications, PostPage } from "./Notifications";
 import { Lists } from "./Lists";
 import { AccountSettings } from "./AccountSettings";
+import { AccountLinkDialog } from "./AccountLinkDialog";
 import { ReadingPreferences } from "./ReadingPreferences";
 import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
@@ -73,6 +74,8 @@ const views = {
   author: "Authors",
   catalog: "Browse the catalogue",
   readers: "Find your reading people",
+  verify: "A note from Shelves",
+  reset: "A fresh chapter",
 };
 type View = keyof typeof views;
 const nav: [View, string, string][] = [
@@ -1671,6 +1674,23 @@ export function App() {
             await refresh();
             setNotice("Welcome to your reading nook.");
           }}
+        />
+      ) : null}
+      {view === "verify" || view === "reset" ? (
+        <AccountLinkDialog
+          key={location.hash}
+          kind={view}
+          token={
+            new URLSearchParams(location.hash.split("?")[1] || "").get(
+              "token",
+            ) || ""
+          }
+          onClose={() => {
+            location.hash = "home";
+            void refresh();
+            if (view === "reset") setAuth(true);
+          }}
+          onVerified={refresh}
         />
       ) : null}
       {book ? (

@@ -21,6 +21,9 @@ export function AuthDialog({
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [identifier, setIdentifier] = useState("");
+  const [forgot, setForgot] = useState(false);
+  const [sent, setSent] = useState<"verify" | "reset" | null>(null);
+  const [mailbox, setMailbox] = useState("");
   const [lastEdited, setLastEdited] = useState<"name" | "username">("name");
   const greeting = register
     ? lastEdited === "name"
@@ -34,6 +37,19 @@ export function AuthDialog({
     setBusy(true);
     setError("");
     const d = new FormData(e.currentTarget);
+    if (forgot) {
+      try {
+        const email = String(d.get("email") || "").trim();
+        await api("/auth/forgot-password", json("POST", { email }));
+        setMailbox(email);
+        setSent("reset");
+      } catch (error) {
+        setError(errorText(error));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     const login = String(d.get("identifier") ?? "").trim();
     const account = register
       ? {
@@ -45,7 +61,7 @@ export function AuthDialog({
         ? { email: login }
         : { username: login };
     try {
-      const result = await api<{ user: User }>(
+      const result = await api<{ user: User; verificationPending?: boolean }>(
         `/auth/${register ? "register" : "login"}`,
         json("POST", {
           ...account,
@@ -53,7 +69,10 @@ export function AuthDialog({
         }),
       );
       await onUser(result.user);
-      onClose();
+      if (register && result.verificationPending) {
+        setMailbox(String(d.get("email") || ""));
+        setSent("verify");
+      } else onClose();
     } catch (error) {
       setError(errorText(error));
     } finally {
@@ -62,7 +81,15 @@ export function AuthDialog({
   }
   return (
     <Dialog
-      title={register ? "Join Shelves" : "Welcome back"}
+      title={
+        sent
+          ? "Check your inbox"
+          : forgot
+            ? "Find your way back"
+            : register
+              ? "Join Shelves"
+              : "Welcome back"
+      }
       onClose={onClose}
       className="auth-dialog"
     >
@@ -70,129 +97,232 @@ export function AuthDialog({
         <div className="auth-greeting">
           <BrandMark />
           <p>
-            Hello, <strong>{greeting || "reader"}</strong>
+            {forgot || sent ? "Your story," : "Hello,"}{" "}
+            <strong>
+              {forgot || sent ? "continues." : greeting || "reader"}
+            </strong>
           </p>
         </div>
         <div className="auth-entry">
-          <h2>{register ? "Create your account" : "Sign in"}</h2>
-          <Form
-            key={register ? "register" : "login"}
-            className="auth-form"
-            noValidate
-            onSubmit={submit}
-          >
-            {register ? (
-              <>
-                <label>
-                  Your name
-                  <input
-                    name="displayName"
-                    required
-                    maxLength={60}
-                    autoComplete="name"
-                    value={name}
-                    onChange={(event) => {
-                      setName(event.target.value);
-                      setLastEdited("name");
-                    }}
-                  />
-                </label>
-                <label>
-                  Username
-                  <input
-                    name="username"
-                    aria-label="Username"
-                    required
-                    minLength={3}
-                    maxLength={24}
-                    pattern="[a-zA-Z0-9_]+"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(event) => {
-                      setUsername(event.target.value);
-                      setLastEdited("username");
-                    }}
-                  />
-                  <small>Letters, numbers, and underscores.</small>
-                </label>
-                <label>
-                  Email
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    maxLength={254}
-                    autoComplete="email"
-                  />
-                </label>
-              </>
-            ) : (
-              <label>
-                Email or username
-                <input
-                  name="identifier"
-                  required
-                  maxLength={254}
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  value={identifier}
-                  onChange={(event) => setIdentifier(event.target.value)}
-                />
-              </label>
-            )}
-            <div className="auth-password">
-              <label>
-                Password
-                <input
-                  name="password"
-                  aria-label="Password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={10}
-                  maxLength={128}
-                  autoComplete={register ? "new-password" : "current-password"}
-                />
-              </label>
+          {sent ? (
+            <div className="auth-letter" role="status">
+              <div className="auth-letter-icon" aria-hidden="true">
+                ✳
+              </div>
+              <span className="section-kicker">A NOTE FROM SHELVES</span>
+              <h2>There’s a letter on its way.</h2>
+              <p>
+                {sent === "verify"
+                  ? "Open the link in your email to confirm this reading nook is yours."
+                  : "If there’s an account at this address, your reset link is on its way."}
+              </p>
+              <p className="auth-mailbox">{mailbox}</p>
+              {sent === "verify" ? (
+                <button
+                  className="outline-btn"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError("");
+                    try {
+                      await api(
+                        "/auth/resend-verification",
+                        json("POST", { email: mailbox }),
+                      );
+                    } catch (reason) {
+                      setError(errorText(reason));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Send another letter
+                </button>
+              ) : null}
+              <ErrorMessage message={error} />
               <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
+                className="primary-btn"
+                onClick={() => {
+                  if (sent === "verify") onClose();
+                  else {
+                    setSent(null);
+                    setForgot(false);
+                    setRegister(false);
+                    setIdentifier(mailbox);
+                  }
+                }}
               >
-                {showPassword ? "Hide" : "Show"}
-                <span className="auth-sr-only"> password</span>
+                {sent === "verify" ? "Continue to Shelves" : "Back to sign in"}{" "}
+                <Icon name="arrowUpRight" />
               </button>
             </div>
-            {register ? (
-              <p className="auth-field-hint">At least 10 characters.</p>
-            ) : null}
-            <ErrorMessage message={error} />
-            <button className="primary-btn auth-submit" disabled={busy}>
-              <span>
-                {busy
-                  ? "Please wait…"
+          ) : (
+            <>
+              <h2>
+                {forgot
+                  ? "Reset your password"
                   : register
-                    ? "Create my account"
+                    ? "Create your account"
                     : "Sign in"}
-                <span className="auth-sr-only"> ↗</span>
-              </span>
-              {busy ? null : <Icon name="arrowUpRight" />}
-            </button>
-            <button
-              className="plain-link auth-mode-switch"
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                setRegister(!register);
-                setError("");
-                setShowPassword(false);
-              }}
-            >
-              {register
-                ? "Already a reader? Sign in"
-                : "New here? Create an account"}
-            </button>
-          </Form>
+              </h2>
+              <Form
+                key={forgot ? "forgot" : register ? "register" : "login"}
+                className="auth-form"
+                noValidate
+                onSubmit={submit}
+              >
+                {forgot ? (
+                  <label>
+                    Email address
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      maxLength={254}
+                      autoComplete="email"
+                      defaultValue={identifier.includes("@") ? identifier : ""}
+                    />
+                  </label>
+                ) : register ? (
+                  <>
+                    <label>
+                      Your name
+                      <input
+                        name="displayName"
+                        required
+                        maxLength={60}
+                        autoComplete="name"
+                        value={name}
+                        onChange={(event) => {
+                          setName(event.target.value);
+                          setLastEdited("name");
+                        }}
+                      />
+                    </label>
+                    <label>
+                      Username
+                      <input
+                        name="username"
+                        aria-label="Username"
+                        required
+                        minLength={3}
+                        maxLength={24}
+                        pattern="[a-zA-Z0-9_]+"
+                        autoComplete="username"
+                        value={username}
+                        onChange={(event) => {
+                          setUsername(event.target.value);
+                          setLastEdited("username");
+                        }}
+                      />
+                      <small>Letters, numbers, and underscores.</small>
+                    </label>
+                    <label>
+                      Email
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        maxLength={254}
+                        autoComplete="email"
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <label>
+                    Email or username
+                    <input
+                      name="identifier"
+                      required
+                      maxLength={254}
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      value={identifier}
+                      onChange={(event) => setIdentifier(event.target.value)}
+                    />
+                  </label>
+                )}
+                {!forgot ? (
+                  <div className="auth-password">
+                    <label>
+                      Password
+                      <input
+                        name="password"
+                        aria-label="Password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={10}
+                        maxLength={128}
+                        autoComplete={
+                          register ? "new-password" : "current-password"
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                      <span className="auth-sr-only"> password</span>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="auth-field-hint">
+                    We’ll send a private, one-use link if this address has an
+                    account.
+                  </p>
+                )}
+                {register ? (
+                  <p className="auth-field-hint">At least 10 characters.</p>
+                ) : null}
+                <ErrorMessage message={error} />
+                <button className="primary-btn auth-submit" disabled={busy}>
+                  <span>
+                    {busy
+                      ? "Please wait…"
+                      : forgot
+                        ? "Send reset letter"
+                        : register
+                          ? "Create my account"
+                          : "Sign in"}
+                    <span className="auth-sr-only"> ↗</span>
+                  </span>
+                  {busy ? null : <Icon name="arrowUpRight" />}
+                </button>
+                <button
+                  className="plain-link auth-mode-switch"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    if (forgot) setForgot(false);
+                    else setRegister(!register);
+                    setError("");
+                    setShowPassword(false);
+                  }}
+                >
+                  {forgot
+                    ? "Back to sign in"
+                    : register
+                      ? "Already a reader? Sign in"
+                      : "New here? Create an account"}
+                </button>
+                {!register && !forgot ? (
+                  <button
+                    className="plain-link auth-forgot"
+                    type="button"
+                    onClick={() => {
+                      setForgot(true);
+                      setError("");
+                    }}
+                  >
+                    Forgot your password?
+                  </button>
+                ) : null}
+              </Form>
+            </>
+          )}
         </div>
       </div>
     </Dialog>

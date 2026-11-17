@@ -10,6 +10,13 @@ if (
   !process.env.PUBLIC_ORIGIN?.startsWith("https://")
 )
   throw new Error("Production requires an HTTPS PUBLIC_ORIGIN.");
+if (
+  process.env.NODE_ENV === "production" &&
+  (!process.env.RESEND_API_KEY || !process.env.SHELVES_EMAIL_FROM)
+)
+  throw new Error(
+    "Production requires RESEND_API_KEY and SHELVES_EMAIL_FROM for account emails.",
+  );
 const db = await openRuntimeDatabase();
 const app = createApp(db);
 app.use(express.static(resolve("dist")));

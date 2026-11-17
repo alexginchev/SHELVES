@@ -9,7 +9,7 @@ The application is functional but the full master plan is not complete. “Imple
 - Preserve Shelves and the supplied watercolor, paper-and-sage design in DESIGN.md.
 - App-managed cookie sessions and Supabase PostgreSQL are the current architecture. Supabase Auth, Storage, Realtime, proposed libraries and example route names are not prerequisites for completing equivalent behavior.
 - Private ratings, journals, shelves and preferences stay private. Public shelves, profile statistics or automatic activity publication require explicit visibility design; never expose existing records by default.
-- Email verification, password recovery and transactional email remain explicitly deferred. Do not install a provider as part of another milestone.
+- Email verification and password recovery now use expiring account links. Configure and verify a sending domain and Resend credentials before public deployment; local development prints link previews to the server console.
 - Separate editions retain their own records. Conservative title/credited-author grouping is not a translation/work identity system.
 
 ## Feature reconciliation
