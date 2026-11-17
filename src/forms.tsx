@@ -78,6 +78,7 @@ export function AuthDialog({
           <Form
             key={register ? "register" : "login"}
             className="auth-form"
+            noValidate
             onSubmit={submit}
           >
             {register ? (

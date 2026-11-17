@@ -347,11 +347,11 @@ const { auditLayout } = require("./layout.cjs");
       .getByRole("button", { name: "Reading circle", exact: true })
       .click();
     await page2
-      .locator(".community-row")
+      .locator(".community-profile-card")
       .getByRole("button", { name: "Follow", exact: true })
       .click();
     await page2
-      .locator(".community-row")
+      .locator(".community-profile-card")
       .getByRole("button", { name: "Following", exact: true })
       .waitFor();
     await page.reload();

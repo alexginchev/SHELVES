@@ -52,6 +52,8 @@ The shelf occupies the width of the Home stage, with recommendations and actions
 - **Brand** uses the original animated SVG in a burnt-orange palette. The wordmark uses a lighter orange on dark surfaces. Reduced motion displays the final mark immediately.
 - **Authentication** uses a two-column layout with a greeting beside the form. On phones the greeting sits above the fields. The name or username updates as the reader types and uses the brand accent.
 - **Home recommendations** use the server-ranked snapshot shared with Discover. The first pick previews by default. Hover or focus previews another pick. Click, tap, or keyboard activation opens that book’s detail page. The selected preview stays active as the reader moves to View book. Fewer available recommendations result in fewer visible books.
+- **Book details** give the real jacket a large place on a shallow reading stage. Title, author, public rating and the primary library action sit beside it; description and factual edition information occupy a calmer lower split. On phones these become one readable column. Book jackets supply the strongest color rather than a page-wide decorative image.
+- **Reading circle** shows reader profiles as compact tiles with a banner, avatar, public bio and follow action. Uploaded banners appear when present; otherwise restrained colors from the Shelves palette distinguish cards. Profile links and follow controls remain separate targets.
 - **Featured animation** uses the supplied GSAP and SplitType script with a separate integration layer for real data, responsiveness, theme and keyboard behavior. Its original license is under `public/featured-shelf/`.
 - **Routes, dialogs, form states and pick ranking** retain the ownership and behavior in UX-CONTRACT.md.
 

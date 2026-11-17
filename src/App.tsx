@@ -1271,50 +1271,73 @@ export function App() {
                       <Icon name="shelves" />
                     </a>
                   </div>
-                  {data.readers.map((r) => (
-                    <div className="person-row community-row" key={r.id}>
-                      <Avatar
-                        name={r.displayName}
-                        src={
-                          r.avatarVersion
-                            ? `/api/readers/${r.id}/images/avatar?v=${r.avatarVersion}`
-                            : undefined
-                        }
-                      />
-                      <div className="person-info">
-                        <a className="reader-link" href={`#reader/${r.id}`}>
-                          <strong>
-                            <ReaderName
-                              name={r.displayName}
-                              verified={r.isAdmin}
+                  <div className="community-profile-grid">
+                    {data.readers.map((r) => (
+                      <article className="community-profile-card" key={r.id}>
+                        <div className="community-profile-banner">
+                          {r.bannerVersion ? (
+                            <img
+                              src={`/api/readers/${r.id}/images/banner?v=${r.bannerVersion}`}
+                              alt=""
+                              loading="lazy"
                             />
-                          </strong>
-                        </a>
-                        <small>@{r.username}</small>
-                        {r.bio ? <p>{r.bio}</p> : null}
-                        {r.reason ? (
-                          <small className="reader-match">{r.reason}</small>
-                        ) : null}
-                      </div>
-                      <button
-                        className={`follow-btn ${r.following ? "following" : ""}`}
-                        disabled={busy}
-                        onClick={() =>
-                          void mutate(
-                            () =>
-                              api(`/readers/${r.id}/follow`, {
-                                method: r.following ? "DELETE" : "PUT",
-                              }),
-                            r.following
-                              ? "Reader unfollowed."
-                              : "Added to your reading circle.",
-                          )
-                        }
-                      >
-                        {r.following ? "Following" : "Follow"}
-                      </button>
-                    </div>
-                  ))}
+                          ) : null}
+                        </div>
+                        <div className="community-profile-content">
+                          <Avatar
+                            name={r.displayName}
+                            src={
+                              r.avatarVersion
+                                ? `/api/readers/${r.id}/images/avatar?v=${r.avatarVersion}`
+                                : undefined
+                            }
+                          />
+                          <div className="person-info">
+                            <a className="reader-link" href={`#reader/${r.id}`}>
+                              <strong>
+                                <ReaderName
+                                  name={r.displayName}
+                                  verified={r.isAdmin}
+                                />
+                              </strong>
+                            </a>
+                            <small>@{r.username}</small>
+                            {r.bio ? <p>{r.bio}</p> : null}
+                            {r.reason &&
+                            r.reason !== "Explore their reading corner" ? (
+                              <small className="reader-match">{r.reason}</small>
+                            ) : null}
+                          </div>
+                          <div className="community-profile-actions">
+                            <a
+                              href={`#reader/${r.id}`}
+                              aria-label={`View ${r.displayName}'s profile`}
+                              title={`View ${r.displayName}'s profile`}
+                            >
+                              <Icon name="arrowUpRight" />
+                            </a>
+                            <button
+                              className={`follow-btn ${r.following ? "following" : ""}`}
+                              disabled={busy}
+                              onClick={() =>
+                                void mutate(
+                                  () =>
+                                    api(`/readers/${r.id}/follow`, {
+                                      method: r.following ? "DELETE" : "PUT",
+                                    }),
+                                  r.following
+                                    ? "Reader unfollowed."
+                                    : "Added to your reading circle.",
+                                )
+                              }
+                            >
+                              {r.following ? "Following" : "Follow"}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                   {!data.readers.length ? (
                     <div className="empty-state">
                       <p>

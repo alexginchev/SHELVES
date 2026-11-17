@@ -5,7 +5,14 @@ import { AddToList } from "./AddToList";
 import { BrandLoading } from "./SiteIdentity";
 import type { Book, BookSummary, Post, Reading, User } from "../shared/types";
 import { api, json } from "./api";
-import { Cover, Form, PostCard, Dialog, ErrorMessage } from "./components";
+import {
+  Cover,
+  Form,
+  PostCard,
+  Dialog,
+  ErrorMessage,
+  Icon,
+} from "./components";
 import type { FormEvent } from "react";
 import { useCursorPages } from "./useCursorPages";
 import { ActivityMore } from "./PagedFeed";
@@ -304,15 +311,18 @@ export function BookPage({
   return (
     <>
       <section className="view-panel book-page">
-        <a className="plain-link" href="#discover">
+        <a className="plain-link book-page-back" href="#discover">
           ← Discover books
         </a>
         <div className="book-page-hero">
           <div className="book-page-cover">
             <Cover book={book} />
           </div>
-          <div>
-            <span className="section-kicker">A WORLD BETWEEN THE PAGES</span>
+          <div className="book-page-overview">
+            <div className="book-page-meta-line">
+              <span>{book.genre}</span>
+              {book.year ? <span>{book.year}</span> : null}
+            </div>
             <h2>{book.title}</h2>
             <p className="book-page-author">
               {(data.metadata?.authors.length
@@ -330,11 +340,6 @@ export function BookPage({
                 </span>
               ))}
             </p>
-            <div className="book-metadata">
-              <span className="tag tag-sage">{book.genre}</span>
-              {book.year ? <span>{book.year}</span> : null}
-              {book.pages ? <span>{book.pages} pages</span> : null}
-            </div>
             <p className="community-score">
               {summary.averageRating !== null ? (
                 <>
@@ -349,26 +354,21 @@ export function BookPage({
               )}
             </p>
             <div className="book-page-actions">
-              <button
-                className="outline-btn"
-                onClick={() => (user ? setAddingToList(true) : onAuth())}
-              >
-                Add to list
-              </button>
               <button className="primary-btn" onClick={() => onRead(book)}>
                 {record ? "Update reading ↗" : "Add to my library ↗"}
               </button>
               <button
-                className="outline-btn"
-                disabled={!!user && (reviews.busy || !!reviews.error)}
-                onClick={() => (user ? setReview(true) : onAuth())}
+                className="book-page-icon-action"
+                onClick={() => (user ? setAddingToList(true) : onAuth())}
+                aria-label="Add to list"
+                title="Add to list"
               >
-                {reviews.mine
-                  ? "Edit my public review"
-                  : "Write a public review"}
+                <Icon name="plus" />
               </button>
               <button
-                className="plain-link"
+                className="book-page-icon-action"
+                aria-label={copied ? "Link copied" : "Copy book link"}
+                title={copied ? "Link copied" : "Copy book link"}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(location.href);
@@ -380,59 +380,74 @@ export function BookPage({
                   }
                 }}
               >
-                {copied ? "Link copied" : "Copy book link"}
+                <Icon name="share" />
               </button>
             </div>
-            {record ? (
-              <p className="private-reading-status">
-                Your private record: {record.status}
-                {record.rating ? ` · ${record.rating}/5 stars` : ""}
-                {record.page ? ` · page ${record.page}` : ""}
-              </p>
-            ) : null}
           </div>
         </div>
-        <h3>About this book</h3>
-        <p className="book-description">{book.description}</p>
-        {data.metadata ? (
-          <details className="edition-details">
-            <summary>Publication details</summary>
-            <EditionFacts book={book} metadata={data.metadata} />
-            <div className="book-metadata">
-              {data.metadata.tags.map((tag) => (
-                <span className="tag tag-sage" key={tag}>
-                  {tag}
+        <div className="book-page-body">
+          <div className="book-page-description">
+            <h3>About this book</h3>
+            <p className="book-description">{book.description}</p>
+          </div>
+          <aside className="book-page-facts" aria-label="Book details">
+            {record ? (
+              <p className="private-reading-status">
+                <strong>Your reading</strong>
+                <span>
+                  {record.status}
+                  {record.rating ? ` · ${record.rating}/5 stars` : ""}
+                  {record.page ? ` · page ${record.page}` : ""}
                 </span>
-              ))}
-            </div>
-            <a
-              className="plain-link"
-              href={`https://books.google.com/books?id=${encodeURIComponent(data.metadata.providerId)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Book data from Google Books ↗
-            </a>
-            <p>
+              </p>
+            ) : null}
+            {book.pages ? (
+              <p className="book-page-length">
+                <strong>Length</strong>
+                <span>{book.pages} pages</span>
+              </p>
+            ) : null}
+            {data.metadata ? (
+              <details className="edition-details">
+                <summary>Publication details</summary>
+                <EditionFacts book={book} metadata={data.metadata} />
+                <div className="book-metadata">
+                  {data.metadata.tags.map((tag) => (
+                    <span className="tag tag-sage" key={tag}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  className="plain-link"
+                  href={`https://books.google.com/books?id=${encodeURIComponent(data.metadata.providerId)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Book data from Google Books ↗
+                </a>
+                <p>
+                  <a
+                    className="plain-link"
+                    href={`#author?name=${encodeURIComponent(data.metadata.authors[0] || book.author)}&q=${encodeURIComponent(book.title)}`}
+                  >
+                    Explore related editions ↗
+                  </a>
+                </p>
+              </details>
+            ) : null}
+            {/^OL\d+W$/.test(book.id) ? (
               <a
                 className="plain-link"
-                href={`#author?name=${encodeURIComponent(data.metadata.authors[0] || book.author)}&q=${encodeURIComponent(book.title)}`}
+                href={`https://openlibrary.org/works/${book.id}`}
+                target="_blank"
+                rel="noreferrer"
               >
-                Explore related editions ↗
+                Book data from Open Library ↗
               </a>
-            </p>
-          </details>
-        ) : null}
-        {/^OL\d+W$/.test(book.id) ? (
-          <a
-            className="plain-link"
-            href={`https://openlibrary.org/works/${book.id}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Book data from Open Library ↗
-          </a>
-        ) : null}
+            ) : null}
+          </aside>
+        </div>
         <ErrorMessage message={error} />
       </section>
       <BookEditions key={book.id} book={book} metadata={data.metadata} />
@@ -442,10 +457,13 @@ export function BookPage({
       >
         <div className="book-reviews-heading">
           <h2>Reader reviews</h2>
-          <span>
-            {reviews.items.length}{" "}
-            {reviews.items.length === 1 ? "review" : "reviews"}
-          </span>
+          <button
+            className="outline-btn"
+            disabled={!!user && (reviews.busy || !!reviews.error)}
+            onClick={() => (user ? setReview(true) : onAuth())}
+          >
+            {reviews.mine ? "Edit my public review" : "Write a public review"}
+          </button>
         </div>
         <details className="review-controls">
           <summary>
@@ -510,9 +528,11 @@ export function BookPage({
           </div>
         ) : (
           <>
-            <p className="local-note" role="status">
-              {reviews.items.length} reviews loaded
-            </p>
+            {reviews.items.length ? (
+              <p className="local-note" role="status">
+                {reviews.items.length} {reviews.items.length === 1 ? "review" : "reviews"}
+              </p>
+            ) : null}
             <div className="feed-list">
               {reviews.items.map((p) => (
                 <PostCard

@@ -1259,3 +1259,411 @@ body {
     margin-left: 0;
   }
 }
+
+/* Book details: the jacket leads, with the reading task beside it. */
+.book-page {
+  padding: 0;
+  overflow: hidden;
+}
+
+.book-page-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 12px 0 0 clamp(20px, 4vw, 40px);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.book-page-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(26px, 4.5vw, 62px);
+  min-width: 0;
+  min-height: 390px;
+  margin: 0;
+  padding: 22px clamp(20px, 4vw, 40px) 42px;
+  background: var(--paper-deep);
+  isolation: isolate;
+}
+
+.book-page-hero::before {
+  position: absolute;
+  z-index: -1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 58px;
+  border-top: 1px solid var(--line);
+  background: var(--white);
+  content: "";
+}
+
+.book-page-cover {
+  min-width: 0;
+  width: 100%;
+  justify-self: center;
+}
+
+.book-page-cover :is(.real-cover, .paper-cover) {
+  width: min(100%, 230px);
+  height: 340px;
+  margin: 0;
+  box-shadow: 12px 20px 32px #0005;
+}
+
+.book-page-cover .real-cover {
+  object-fit: cover;
+}
+
+.book-page-cover .paper-cover strong {
+  font-size: clamp(18px, 2.3vw, 28px);
+}
+
+.book-page-overview {
+  min-width: 0;
+  padding-bottom: 20px;
+}
+
+.book-page-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: var(--edition-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.book-page-meta-line span + span::before {
+  margin-right: 16px;
+  color: var(--ink-soft);
+  content: "·";
+}
+
+.book-page-overview h2 {
+  max-width: 17ch;
+  margin: 16px 0 12px;
+  font-size: clamp(34px, 4.5vw, 62px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.book-page-author {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.book-page-author .plain-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.book-page-author .plain-link:hover {
+  text-decoration: underline;
+}
+
+.book-page-overview .community-score {
+  margin: 18px 0 24px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.book-page-overview .community-score strong {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.book-page-actions {
+  gap: 9px;
+}
+
+.book-page-actions .primary-btn {
+  min-height: 44px;
+  padding-inline: 18px;
+}
+
+.book-page-icon-action {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.book-page-icon-action:hover {
+  border-color: var(--edition-accent);
+  color: var(--edition-accent);
+}
+
+.book-page-icon-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.book-page-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.8fr);
+  gap: clamp(28px, 4vw, 52px);
+  padding: 30px clamp(20px, 4vw, 40px) 38px;
+}
+
+.book-page-description h3 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.book-page-description .book-description {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.book-page-facts {
+  min-width: 0;
+  padding-left: clamp(18px, 2.5vw, 30px);
+  border-left: 1px solid var(--line);
+}
+
+.book-page-facts > :first-child {
+  margin-top: 0;
+}
+
+.book-page-facts .private-reading-status,
+.book-page-length {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.book-page-facts :is(.private-reading-status, .book-page-length) span {
+  color: var(--ink-soft);
+}
+
+.book-page-facts .edition-details {
+  margin-top: 0;
+}
+
+.book-page-facts .edition-details > summary {
+  min-height: 44px;
+}
+
+.book-page > .form-error {
+  margin: 0 clamp(20px, 4vw, 40px) 24px;
+}
+
+/* Reader cards keep real profiles and actions within the same visual tile. */
+.community-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.community-profile-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--white);
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.community-profile-card:hover {
+  border-color: var(--edition-accent);
+  transform: translateY(-3px);
+}
+
+.community-profile-banner {
+  height: 108px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 75% 25%, #85bdb253, transparent 50%), #294039;
+}
+
+.community-profile-card:nth-child(3n + 2) .community-profile-banner {
+  background:
+    radial-gradient(circle at 75% 25%, #f29a6855, transparent 50%), #46352f;
+}
+
+.community-profile-card:nth-child(3n + 3) .community-profile-banner {
+  background:
+    radial-gradient(circle at 75% 25%, #8298c655, transparent 50%), #30394d;
+}
+
+:root[data-theme="light"] .community-profile-banner {
+  background:
+    radial-gradient(circle at 75% 25%, #a7d2c8, transparent 50%), #d4e2dc;
+}
+
+:root[data-theme="light"]
+  .community-profile-card:nth-child(3n + 2)
+  .community-profile-banner {
+  background:
+    radial-gradient(circle at 75% 25%, #e6b79e, transparent 50%), #e9d9cc;
+}
+
+:root[data-theme="light"]
+  .community-profile-card:nth-child(3n + 3)
+  .community-profile-banner {
+  background:
+    radial-gradient(circle at 75% 25%, #b9c8e2, transparent 50%), #dce3ef;
+}
+
+.community-profile-banner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.community-profile-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 0 16px 16px;
+}
+
+.community-profile-content > .avatar {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 12px;
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.community-profile-content .person-info {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  gap: 2px;
+}
+
+.community-profile-content .person-info strong {
+  font-size: 17px;
+}
+
+.community-profile-content .person-info small {
+  font-size: 12px;
+}
+
+.community-profile-content .person-info p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.community-profile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.community-profile-actions > a {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.community-profile-actions > a:hover {
+  color: var(--edition-accent);
+  border-color: var(--edition-accent);
+}
+
+.community-profile-actions > a svg {
+  width: 17px;
+  height: 17px;
+}
+
+.community-profile-actions .follow-btn {
+  min-height: 44px;
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .community-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .book-page-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding-top: 20px;
+  }
+
+  .book-page-cover {
+    width: min(100%, 190px);
+  }
+
+  .book-page-cover :is(.real-cover, .paper-cover) {
+    width: 190px;
+    height: 280px;
+  }
+
+  .book-page-overview {
+    padding-bottom: 0;
+  }
+
+  .book-page-overview h2 {
+    max-width: none;
+    font-size: clamp(34px, 9vw, 48px);
+  }
+
+  .book-page-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .book-page-facts {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .community-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .community-profile-card {
+    transition: none;
+  }
+
+  .community-profile-card:hover {
+    transform: none;
+  }
+}
