@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { Book, Reading, Shelf, User, Post } from "../shared/types";
-import { Dialog, ErrorMessage } from "./components";
+import { Dialog, ErrorMessage, Form, Icon } from "./components";
+import { BrandMark } from "./SiteIdentity";
 import { api, json } from "./api";
 type Done = () => Promise<void>;
 function errorText(error: unknown) {
@@ -14,22 +15,41 @@ export function AuthDialog({
   onUser: (u: User) => Promise<void>;
 }) {
   const [register, setRegister] = useState(false),
+    [showPassword, setShowPassword] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [lastEdited, setLastEdited] = useState<"name" | "username">("name");
+  const greeting = register
+    ? lastEdited === "name"
+      ? name.trim() || username.trim()
+      : username.trim() || name.trim()
+    : identifier.trim().split("@")[0];
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     const d = new FormData(e.currentTarget);
+    const login = String(d.get("identifier") ?? "").trim();
+    const account = register
+      ? {
+          email: d.get("email"),
+          username: d.get("username"),
+          displayName: d.get("displayName"),
+        }
+      : login.includes("@")
+        ? { email: login }
+        : { username: login };
     try {
       const result = await api<{ user: User }>(
         `/auth/${register ? "register" : "login"}`,
         json("POST", {
-          email: d.get("email"),
+          ...account,
           password: d.get("password"),
-          ...(register
-            ? { username: d.get("username"), displayName: d.get("displayName") }
-            : {}),
         }),
       );
       await onUser(result.user);
@@ -44,81 +64,136 @@ export function AuthDialog({
     <Dialog
       title={register ? "Join Shelves" : "Welcome back"}
       onClose={onClose}
+      className="auth-dialog"
     >
-      <span className="section-kicker">YOUR READING LIFE, ALL TOGETHER</span>
-      <h2>{register ? "A little room for you." : "Welcome back."}</h2>
-      <p>Keep your books, notes, and reading circle together.</p>
-      <form onSubmit={submit}>
-        {register ? (
-          <>
-            <label>
-              Your name
-              <input
-                name="displayName"
-                required
-                maxLength={60}
-                autoComplete="name"
-              />
-            </label>
-            <label>
-              Username
-              <input
-                name="username"
-                aria-label="Username"
-                required
-                minLength={3}
-                maxLength={24}
-                pattern="[a-zA-Z0-9_]+"
-                autoComplete="username"
-              />
-              <small>Letters, numbers, and underscores.</small>
-            </label>
-          </>
-        ) : null}
-        <label>
-          Email
-          <input
-            name="email"
-            type="email"
-            required
-            maxLength={254}
-            autoComplete="email"
-          />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            aria-label="Password"
-            type="password"
-            required
-            minLength={10}
-            maxLength={128}
-            autoComplete={register ? "new-password" : "current-password"}
-          />
-          <small>At least 10 characters.</small>
-        </label>
-        <ErrorMessage message={error} />
-        <button className="primary-btn" disabled={busy}>
-          {busy
-            ? "Please wait…"
-            : register
-              ? "Create my account ↗"
-              : "Sign in ↗"}
-        </button>
-        <button
-          className="plain-link"
-          type="button"
-          onClick={() => {
-            setRegister(!register);
-            setError("");
-          }}
-        >
-          {register
-            ? "Already a reader? Sign in"
-            : "New here? Create an account"}
-        </button>
-      </form>
+      <div className="auth-layout">
+        <div className="auth-greeting">
+          <BrandMark />
+          <p>
+            Hello, <strong>{greeting || "reader"}</strong>
+          </p>
+        </div>
+        <div className="auth-entry">
+          <h2>{register ? "Create your account" : "Sign in"}</h2>
+          <Form
+            key={register ? "register" : "login"}
+            className="auth-form"
+            onSubmit={submit}
+          >
+            {register ? (
+              <>
+                <label>
+                  Your name
+                  <input
+                    name="displayName"
+                    required
+                    maxLength={60}
+                    autoComplete="name"
+                    value={name}
+                    onChange={(event) => {
+                      setName(event.target.value);
+                      setLastEdited("name");
+                    }}
+                  />
+                </label>
+                <label>
+                  Username
+                  <input
+                    name="username"
+                    aria-label="Username"
+                    required
+                    minLength={3}
+                    maxLength={24}
+                    pattern="[a-zA-Z0-9_]+"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(event) => {
+                      setUsername(event.target.value);
+                      setLastEdited("username");
+                    }}
+                  />
+                  <small>Letters, numbers, and underscores.</small>
+                </label>
+                <label>
+                  Email
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    maxLength={254}
+                    autoComplete="email"
+                  />
+                </label>
+              </>
+            ) : (
+              <label>
+                Email or username
+                <input
+                  name="identifier"
+                  required
+                  maxLength={254}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                />
+              </label>
+            )}
+            <div className="auth-password">
+              <label>
+                Password
+                <input
+                  name="password"
+                  aria-label="Password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  autoComplete={register ? "new-password" : "current-password"}
+                />
+              </label>
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+                <span className="auth-sr-only"> password</span>
+              </button>
+            </div>
+            {register ? (
+              <p className="auth-field-hint">At least 10 characters.</p>
+            ) : null}
+            <ErrorMessage message={error} />
+            <button className="primary-btn auth-submit" disabled={busy}>
+              <span>
+                {busy
+                  ? "Please wait…"
+                  : register
+                    ? "Create my account"
+                    : "Sign in"}
+                <span className="auth-sr-only"> ↗</span>
+              </span>
+              {busy ? null : <Icon name="arrowUpRight" />}
+            </button>
+            <button
+              className="plain-link auth-mode-switch"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setRegister(!register);
+                setError("");
+                setShowPassword(false);
+              }}
+            >
+              {register
+                ? "Already a reader? Sign in"
+                : "New here? Create an account"}
+            </button>
+          </Form>
+        </div>
+      </div>
     </Dialog>
   );
 }
@@ -193,7 +268,7 @@ export function BookDialog({
         {book.pages ? ` · ${book.pages} pages` : ""}
       </p>
       <p>{book.description}</p>
-      <form onSubmit={submit}>
+      <Form noValidate onSubmit={submit}>
         <label>
           Reading status
           <select name="status" defaultValue={record?.status || "Want to read"}>
@@ -232,6 +307,7 @@ export function BookDialog({
         <label>
           Your private review
           <textarea
+            className="resize-none"
             name="review"
             maxLength={4000}
             defaultValue={record?.review || ""}
@@ -295,7 +371,7 @@ export function BookDialog({
             )}
           </>
         ) : null}
-      </form>
+      </Form>
     </Dialog>
   );
 }
@@ -331,7 +407,7 @@ export function SimpleForm({
       if (kind === "post")
         await api(
           "/posts",
-          json("POST", { body: d.get("body"), kind: d.get("kind") }),
+          json("POST", { body: d.get("body"), kind: "thought" }),
         );
       if (kind === "comment")
         await api(
@@ -352,7 +428,7 @@ export function SimpleForm({
     <Dialog title={title} onClose={onClose}>
       <span className="section-kicker">A LITTLE SHELVES MOMENT</span>
       <h2>{title}</h2>
-      <form onSubmit={submit}>
+      <Form noValidate onSubmit={submit}>
         {kind === "shelf" ? (
           <label>
             Shelf name
@@ -369,19 +445,10 @@ export function SimpleForm({
           </p>
         ) : (
           <>
-            {kind === "post" ? (
-              <label>
-                What are you sharing?
-                <select name="kind">
-                  <option value="thought">A reading thought</option>
-                  <option value="quote">A favorite quote</option>
-                  <option value="progress">Reading progress</option>
-                </select>
-              </label>
-            ) : null}
             <label>
               Your note
               <textarea
+                className="resize-none"
                 name="body"
                 required
                 maxLength={kind === "comment" ? 500 : 1200}
@@ -406,7 +473,7 @@ export function SimpleForm({
                   ? "Add note ↗"
                   : "Share with the community ↗"}
         </button>
-      </form>
+      </Form>
     </Dialog>
   );
 }
@@ -444,7 +511,7 @@ export function ProfileForm({
     }
   }
   return (
-    <form className="profile-form" onSubmit={submit}>
+    <Form noValidate className="profile-form" onSubmit={submit}>
       <label>
         Your name
         <input
@@ -456,7 +523,12 @@ export function ProfileForm({
       </label>
       <label>
         A little about you
-        <textarea name="bio" defaultValue={user.bio} maxLength={300} />
+        <textarea
+          className="resize-none"
+          name="bio"
+          defaultValue={user.bio}
+          maxLength={300}
+        />
       </label>
       <label>
         Reading goal for {new Date().getFullYear()}
@@ -474,6 +546,87 @@ export function ProfileForm({
       <button className="primary-btn" disabled={busy}>
         {busy ? "Saving…" : "Save profile ↗"}
       </button>
-    </form>
+    </Form>
+  );
+}
+export function ShelfDialog({
+  shelf,
+  deleting,
+  onClose,
+  onSaved,
+}: {
+  shelf: Shelf;
+  deleting: boolean;
+  onClose: () => void;
+  onSaved: Done;
+}) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(
+        `/shelves/${shelf.id}`,
+        deleting
+          ? { method: "DELETE" }
+          : json("PATCH", { name: new FormData(e.currentTarget).get("name") }),
+      );
+      await onSaved();
+      onClose();
+    } catch (error) {
+      setError(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog
+      title={deleting ? "Delete shelf" : "Rename shelf"}
+      onClose={onClose}
+    >
+      <span className="section-kicker">YOUR PERSONAL LIBRARY</span>
+      <h2>{deleting ? "Delete this shelf?" : "Give your shelf a new name."}</h2>
+      <Form noValidate onSubmit={submit}>
+        {deleting ? (
+          <p>
+            Delete “{shelf.name}”? Its {shelf.count}{" "}
+            {shelf.count === 1 ? "book stays" : "books stay"} in your library,
+            with all your reading progress and private notes. Only this shelf
+            and its memberships will be removed.
+          </p>
+        ) : (
+          <label>
+            Shelf name
+            <input
+              name="name"
+              required
+              maxLength={60}
+              defaultValue={shelf.name}
+            />
+          </label>
+        )}
+        <ErrorMessage message={error} />
+        <div className="shelf-actions">
+          <button
+            type="button"
+            className="outline-btn"
+            autoFocus={deleting}
+            onClick={onClose}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+          <button
+            className={deleting ? "outline-btn danger-button" : "primary-btn"}
+            disabled={busy}
+          >
+            {busy ? "Saving…" : deleting ? "Delete shelf" : "Save shelf name"}
+          </button>
+        </div>
+      </Form>
+    </Dialog>
   );
 }

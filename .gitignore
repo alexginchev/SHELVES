@@ -6,3 +6,5 @@ data/
 !.env.example
 test-results/
 supabase-ca.crt
+
+!.env.supabase.example

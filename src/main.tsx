@@ -1,8 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import "../styles.css";
-import "./app.css";
+import "./design.css";
+document.documentElement.dataset.theme =
+  localStorage.getItem("theme") === "light" ? "light" : "dark";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

@@ -1,6 +1,6 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import { readFileSync } from "node:fs";
-export function supabasePool() {
+export function supabasePool(schema?: string) {
   const project = process.env.SUPABASE_URL,
     connection = process.env.SUPABASE_DATABASE_URL;
   if (!project || !connection)
@@ -23,11 +23,18 @@ export function supabasePool() {
     throw new Error(
       "Database URI must belong to the configured Supabase project.",
     );
-  for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert"])
+  for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert", "options"])
     uri.searchParams.delete(key);
-  return new Pool({
+  const pool = new Pool({
     connectionString: uri.toString(),
     max: 5,
+    options: `-c timezone=UTC${schema ? ` -c search_path=${schema},pg_catalog` : ""}`,
+    types: {
+      getTypeParser: (oid: number, format?: "text" | "binary") =>
+        oid === 20 || oid === 1700
+          ? (value: string) => Number(value)
+          : types.getTypeParser(oid, format),
+    },
     connectionTimeoutMillis: 10000,
     statement_timeout: 15000,
     ssl: {
@@ -37,4 +44,10 @@ export function supabasePool() {
         : {}),
     },
   });
+  pool.on("error", (error) =>
+    console.error("PostgreSQL idle connection failed", {
+      code: "code" in error ? error.code : "unknown",
+    }),
+  );
+  return pool;
 }

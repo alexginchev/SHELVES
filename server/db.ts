@@ -1,7 +1,8 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { Book } from "../shared/types.ts";
+import type { Store } from "./store.ts";
+import { seedBooks } from "./catalog.ts";
 export function openDatabase(filename: string) {
   if (filename !== ":memory:")
     mkdirSync(dirname(resolve(filename)), { recursive: true });
@@ -23,7 +24,10 @@ export function openDatabase(filename: string) {
       if (
         filename !== ":memory:" &&
         db.prepare("SELECT name FROM schema_migrations LIMIT 1").get() &&
-        one<{ n: number }>(db, "SELECT count(*) AS n FROM users")!.n > 0
+        Number(
+          (db.prepare("SELECT count(*) AS n FROM users").get() as { n: number })
+            .n,
+        ) > 0
       ) {
         const backupPath = resolve(
           `${filename}.before-${name}-${Date.now()}.bak`,
@@ -41,84 +45,10 @@ export function openDatabase(filename: string) {
       }
     }
   }
-  const seeds: Book[] = [
-    {
-      id: "seed-garden",
-      title: "The Secret Garden",
-      author: "Frances Hodgson Burnett",
-      genre: "Classic",
-      pages: 288,
-      description:
-        "A lonely girl discovers a hidden garden and the friendships that bring it back to life.",
-      cover: null,
-      color: "sage",
-      year: 1911,
-    },
-    {
-      id: "seed-creatures",
-      title: "Remarkably Bright Creatures",
-      author: "Shelby Van Pelt",
-      genre: "Fiction",
-      pages: 368,
-      description:
-        "A widow, a young man, and a perceptive octopus find unexpected connections in a coastal town.",
-      cover: null,
-      color: "mist",
-      year: 2022,
-    },
-    {
-      id: "seed-overstory",
-      title: "The Overstory",
-      author: "Richard Powers",
-      genre: "Literary",
-      pages: 512,
-      description:
-        "Interwoven lives reveal the extraordinary world of trees and the people moved to protect it.",
-      cover: null,
-      color: "sage",
-      year: 2018,
-    },
-    {
-      id: "seed-sweetgrass",
-      title: "Braiding Sweetgrass",
-      author: "Robin Wall Kimmerer",
-      genre: "Nature",
-      pages: 408,
-      description:
-        "A botanist brings Indigenous knowledge and scientific observation together in reflections on the living world.",
-      cover: null,
-      color: "lavender",
-      year: 2013,
-    },
-    {
-      id: "seed-smallthings",
-      title: "Small Things Like These",
-      author: "Claire Keegan",
-      genre: "Literary",
-      pages: 128,
-      description:
-        "A coal merchant in a small Irish town faces a choice between silence and compassion.",
-      cover: null,
-      color: "coral",
-      year: 2021,
-    },
-    {
-      id: "seed-piranesi",
-      title: "Piranesi",
-      author: "Susanna Clarke",
-      genre: "Fantasy",
-      pages: 272,
-      description:
-        "In a house of endless halls, a solitary explorer begins to question everything he knows.",
-      cover: null,
-      color: "mist",
-      year: 2020,
-    },
-  ];
   const insert = db.prepare(
     "INSERT OR IGNORE INTO books VALUES (?,?,?,?,?,?,?,?,?)",
   );
-  seeds.forEach((b) =>
+  seedBooks.forEach((b) =>
     insert.run(
       b.id,
       b.title,
@@ -131,30 +61,30 @@ export function openDatabase(filename: string) {
       b.year,
     ),
   );
+  for (const b of seedBooks)
+    db.prepare("UPDATE books SET cover=? WHERE id=? AND cover IS NULL").run(
+      b.cover,
+      b.id,
+    );
   return db;
 }
-export function all<T>(
-  db: DatabaseSync,
+export async function all<T>(
+  db: Store,
   sql: string,
   ...values: SQLInputValue[]
-): T[] {
-  return db.prepare(sql).all(...values) as unknown as T[];
+): Promise<T[]> {
+  return db.all<T>(sql, ...values);
 }
-export function one<T>(
-  db: DatabaseSync,
+export async function one<T>(
+  db: Store,
   sql: string,
   ...values: SQLInputValue[]
-): T | undefined {
-  return db.prepare(sql).get(...values) as unknown as T | undefined;
+): Promise<T | undefined> {
+  return db.get<T>(sql, ...values);
 }
-export function transaction<T>(db: DatabaseSync, run: () => T): T {
-  db.exec("BEGIN");
-  try {
-    const result = run();
-    db.exec("COMMIT");
-    return result;
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+export async function transaction<T>(
+  db: Store,
+  run: (tx: Store) => Promise<T>,
+): Promise<T> {
+  return db.transaction(run);
 }

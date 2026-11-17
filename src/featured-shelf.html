@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shelves recommendations</title>
+    <link rel="stylesheet" href="/featured-shelf/normalize.css">
+<link rel="preload" href="/featured-shelf/cabinet-medium.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/featured-shelf/cabinet-extrabold.woff" as="font" type="font/woff" crossorigin><link rel="stylesheet" href="/featured-shelf/style.css">
+
+  <link rel="stylesheet" href="/featured-shelf/shelves.css"></head>
+    
+  <body class="dark-mode">
+  <div class="theme-toggle" id="theme-toggle"></div>
+
+<svg style="position: absolute; width: 100%; height: 100%; z-index: 0;" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dottedGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="rgba(0,0,0,0.15)" />
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#dottedGrid)" />
+</svg>
+
+<div class="book-title-overlay">
+  <div class="book-title-text"></div>
+</div>
+
+<div class="shelf-container">
+  <div class="book-shadow">
+    <div class="book-shadow__item"></div>
+    <div class="book-shadow__item side"></div>
+    <div class="book-shadow__item"></div>
+    <div class="book-shadow__item"></div>
+  </div>
+
+  <div class="shelf"></div>
+
+  <div class="books-wrapper">
+    <div class="books__item">
+      <div class="books__container">
+        <div class="books__cover">
+          <div class="books__back-cover"></div>
+          <div class="books__inside">
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+          </div>
+          <div class="books__image">
+            <img alt="">
+            <div class="books__effect"></div>
+            <div class="books__light"></div>
+          </div>
+          <div class="books__hitbox" data-book-index="0" data-book-title=""></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-book" data-book-index="side" data-book-title="">
+      <div class="side-book__title"></div>
+      <div class="side-book__decoration"></div>
+      <div class="side-book__decoration"></div>
+    </div>
+
+    <div class="books__item">
+      <div class="books__container">
+        <div class="books__cover">
+          <div class="books__back-cover"></div>
+          <div class="books__inside">
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+          </div>
+          <div class="books__image">
+            <img alt="">
+            <div class="books__effect"></div>
+            <div class="books__light"></div>
+          </div>
+          <div class="books__hitbox" data-book-index="1" data-book-title=""></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="books__item" id="default-open-book">
+      <div class="books__container">
+        <div class="books__cover">
+          <div class="books__back-cover"></div>
+          <div class="books__inside">
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+            <div class="books__page"></div>
+          </div>
+          <div class="books__image">
+            <img alt="">
+            <div class="books__effect"></div>
+            <div class="books__light"></div>
+          </div>
+          <div class="books__hitbox" data-book-index="2" data-book-title=""></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="book-descriptions">
+    <div class="book-description" data-book-index="0">
+      <h3></h3>
+      <div class="author"></div>
+      <div class="lines-animation">
+        <p></p>
+      </div>
+    </div>
+
+    <div class="book-description" data-book-index="side">
+      <h3></h3>
+      <div class="author"></div>
+      <div class="lines-animation">
+        <p></p>
+      </div>
+    </div>
+
+    <div class="book-description" data-book-index="1">
+      <h3></h3>
+      <div class="author"></div>
+      <div class="lines-animation">
+        <p></p>
+      </div>
+    </div>
+
+    <div class="book-description active" data-book-index="2">
+      <h3></h3>
+      <div class="author"></div>
+      <div class="lines-animation">
+        <p></p>
+      </div>
+    </div>
+  </div>
+</div>
+    <script src='/featured-shelf/gsap.min.js'></script>
+<script src='/featured-shelf/CustomEase.min.js'></script>
+<script src='/featured-shelf/split-type.min.js'></script><script  src="/featured-shelf/script.js"></script>
+
+  <script src="/featured-shelf/shelves.js"></script></body>
+  
+</html>
