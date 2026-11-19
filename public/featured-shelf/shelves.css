@@ -3,6 +3,21 @@ body {
   isolation: isolate;
 }
 
+/* Match the host page on both themes so the iframe has no visible color seam. */
+:root {
+  --bg-color: #f8f7f3;
+  --text-color: #222726;
+  --title-color: #222726;
+  --overlay-text-color: rgba(34, 39, 38, 0.055);
+}
+
+.dark-mode {
+  --bg-color: #111416;
+  --text-color: #f6f3ed;
+  --title-color: #f6f3ed;
+  --overlay-text-color: rgba(246, 243, 237, 0.045);
+}
+
 [hidden],
 .books__image img:not([src]) {
   display: none !important;

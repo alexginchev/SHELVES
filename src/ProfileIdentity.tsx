@@ -1,5 +1,5 @@
 import { ReaderName } from "./ShelvesBadge";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { User, Reader } from "../shared/types";
 import { api } from "./api";
 import { Avatar, ErrorMessage } from "./components";
@@ -9,10 +9,12 @@ export function ProfileIdentity({
   reader,
   followers,
   following,
+  actions,
 }: {
   reader: User | Reader;
   followers: number;
   following: number;
+  actions?: ReactNode;
 }) {
   return (
     <section className="view-panel profile-identity">
@@ -55,19 +57,22 @@ export function ProfileIdentity({
             {reader.bio}
           </p>
         ) : null}
-        <div className="profile-stats">
-          <a
-            className="plain-link"
-            href={`#readers?scope=followers&reader=${reader.id}`}
-          >
-            <b>{followers}</b> followers
-          </a>
-          <a
-            className="plain-link"
-            href={`#readers?scope=following&reader=${reader.id}`}
-          >
-            <b>{following}</b> following
-          </a>
+        <div className="profile-bottom-row">
+          <div className="profile-stats">
+            <a
+              className="plain-link"
+              href={`#readers?scope=followers&reader=${reader.id}`}
+            >
+              <b>{followers}</b> followers
+            </a>
+            <a
+              className="plain-link"
+              href={`#readers?scope=following&reader=${reader.id}`}
+            >
+              <b>{following}</b> following
+            </a>
+          </div>
+          {actions}
         </div>
       </div>
     </section>

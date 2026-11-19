@@ -54,6 +54,13 @@ export function Icon({ name }: { name: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    more: (
+      <>
+        <circle cx="5" cy="12" r="1.5" />
+        <circle cx="12" cy="12" r="1.5" />
+        <circle cx="19" cy="12" r="1.5" />
+      </>
+    ),
     close: <path d="M5 5l14 14M19 5 5 19" />,
     check: <path d="m4 12 5 5L20 6" />,
     arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,

@@ -4,7 +4,7 @@ import { ProfileIdentity } from "./ProfileIdentity";
 import { useEffect, useState } from "react";
 import type { Post, ReaderProfile, User } from "../shared/types";
 import { api } from "./api";
-import { Avatar, PostCard } from "./components";
+import { Avatar, Icon, PostCard } from "./components";
 export function ReaderPage({
   id,
   wallOnly = false,
@@ -78,29 +78,41 @@ export function ReaderPage({
             reader={reader}
             followers={profile.followers}
             following={profile.followingCount}
+            actions={
+              <div className="profile-follow-actions">
+                {reader.id === user?.id ? (
+                  <a className="outline-btn" href="#profile">
+                    Edit my profile
+                  </a>
+                ) : (
+                  <button
+                    className={`follow-btn ${reader.following ? "following" : ""}`}
+                    disabled={busy || reader.interactionBlocked}
+                    onClick={() => onFollow(reader.following)}
+                  >
+                    {reader.interactionBlocked
+                      ? "Interactions unavailable"
+                      : reader.following
+                        ? "Following"
+                        : "Follow reader"}
+                  </button>
+                )}
+                {user && user.id !== reader.id ? (
+                  <details className="profile-action-menu">
+                    <summary
+                      aria-label="More reader actions"
+                      title="More reader actions"
+                    >
+                      <Icon name="more" />
+                    </summary>
+                    <div className="profile-action-popover">
+                      <ReaderControls targetId={reader.id} />
+                    </div>
+                  </details>
+                ) : null}
+              </div>
+            }
           />
-          <section className="view-panel profile-follow-actions">
-            {reader.id === user?.id ? (
-              <a className="outline-btn" href="#profile">
-                Edit my profile
-              </a>
-            ) : (
-              <button
-                className={`follow-btn ${reader.following ? "following" : ""}`}
-                disabled={busy || reader.interactionBlocked}
-                onClick={() => onFollow(reader.following)}
-              >
-                {reader.interactionBlocked
-                  ? "Interactions unavailable"
-                  : reader.following
-                    ? "Following"
-                    : "Follow reader"}
-              </button>
-            )}
-            {user && user.id !== reader.id ? (
-              <ReaderControls targetId={reader.id} />
-            ) : null}
-          </section>
         </>
       ) : null}
       <section className="view-panel profile-wall">
