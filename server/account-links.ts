@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import rateLimit from "express-rate-limit";
 import type { Express } from "express";
 import { z } from "zod";
@@ -15,6 +16,10 @@ const emailSchema = z
 const passwordSchema = z.string().min(10).max(128);
 const hashToken = (token: string) =>
   createHash("sha256").update(token).digest("hex");
+const resetEmailHtml = readFileSync(
+  new URL("../email-templates/password-reset.html", import.meta.url),
+  "utf8",
+);
 
 function origin() {
   const value =
@@ -44,6 +49,8 @@ function emailMarkup(purpose: Purpose, url: string) {
 async function deliver(email: string, purpose: Purpose, token: string) {
   const url = `${origin()}/#${purpose === "verify" ? "verify" : "reset"}?token=${token}`;
   const message = emailMarkup(purpose, url);
+  if (purpose === "reset")
+    message.html = resetEmailHtml.replaceAll("{{action_url}}", url);
   const key = process.env.RESEND_API_KEY;
   const from = process.env.SHELVES_EMAIL_FROM;
   if (!key || !from) {
