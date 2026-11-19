@@ -20,7 +20,6 @@ export function AccountSettings({
 }) {
   const [account, setAccount] = useState<{
       email: string;
-      emailVerifiedAt: number | null;
       activeSessions: number;
     } | null>(null),
     [error, setError] = useState(""),
@@ -33,11 +32,7 @@ export function AccountSettings({
     if (!user) return;
     setSuccess("");
     const controller = new AbortController();
-    api<{
-      email: string;
-      emailVerifiedAt: number | null;
-      activeSessions: number;
-    }>("/account", {
+    api<{ email: string; activeSessions: number }>("/account", {
       signal: controller.signal,
     })
       .then((value) => {
@@ -83,45 +78,8 @@ export function AccountSettings({
               <dl className="account-details">
                 <div>
                   <dt>Email</dt>
-                  <dd>
-                    {account.email}{" "}
-                    <span className="account-email-status">
-                      {account.emailVerifiedAt
-                        ? "Verified ✓"
-                        : "Waiting for verification"}
-                    </span>
-                  </dd>
+                  <dd>{account.email}</dd>
                 </div>
-                {!account.emailVerifiedAt ? (
-                  <div>
-                    <dt>Verification</dt>
-                    <dd>
-                      <button
-                        className="outline-btn"
-                        onClick={async () => {
-                          setError("");
-                          try {
-                            await api(
-                              "/auth/resend-verification",
-                              json("POST", { email: account.email }),
-                            );
-                            setSuccess(
-                              "A new verification letter is on its way.",
-                            );
-                          } catch (reason) {
-                            setError(
-                              reason instanceof Error
-                                ? reason.message
-                                : "Please try again.",
-                            );
-                          }
-                        }}
-                      >
-                        Send another letter
-                      </button>
-                    </dd>
-                  </div>
-                ) : null}
                 <div>
                   <dt>Active sessions</dt>
                   <dd>

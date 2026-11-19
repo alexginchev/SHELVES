@@ -51,7 +51,7 @@ export function accountRoutes(app: Express, db: Store) {
     const id = owner(res);
     res.json(
       await db.get(
-        'SELECT email,email_verified_at AS "emailVerifiedAt",(SELECT count(*) FROM sessions WHERE user_id=? AND expires_at>?) AS "activeSessions" FROM users WHERE id=?',
+        'SELECT email,(SELECT count(*) FROM sessions WHERE user_id=? AND expires_at>?) AS "activeSessions" FROM users WHERE id=?',
         id,
         Date.now(),
         id,

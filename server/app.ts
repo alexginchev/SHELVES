@@ -21,7 +21,6 @@ import { randomUUID } from "node:crypto";
 import { listRoutes } from "./lists.ts";
 import { postCommentRoutes } from "./post-comments.ts";
 import { accountRoutes } from "./account.ts";
-import { accountLinkRoutes, issueAccountLink } from "./account-links.ts";
 import { readerDirectoryRoutes } from "./reader-directory.ts";
 import type { Store } from "./store.ts";
 import { z } from "zod";
@@ -141,7 +140,6 @@ export function createApp(db: Store) {
   app.get("/api/auth/me", (_req, res) =>
     res.json({ user: res.locals.user || null }),
   );
-  accountLinkRoutes(app, db);
   app.get("/api/snapshot", async (_req, res) => {
     const me = res.locals.user as User | undefined;
     const [
@@ -211,15 +209,8 @@ export function createApp(db: Store) {
       data.displayName,
       passwordHash,
     );
-    try {
-      await issueAccountLink(db, newId, data.email, "verify");
-    } catch (error) {
-      await db.run("DELETE FROM users WHERE id=?", newId);
-      throw error;
-    }
     await createSession(db, res, newId);
     res.status(201).json({
-      verificationPending: true,
       user: await one<User>(
         db,
         `SELECT ${userColumns} FROM users WHERE id=?`,

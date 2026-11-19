@@ -1291,11 +1291,7 @@ test("account settings require reauthentication, revoke sessions and delete only
     assert.equal((await request("/account")).status, 401);
     assert.deepEqual(
       await (await request("/account", "GET", undefined, cookie)).json(),
-      {
-        email: "account@example.test",
-        emailVerifiedAt: null,
-        activeSessions: 2,
-      },
+      { email: "account@example.test", activeSessions: 2 },
     );
     assert.equal(
       (

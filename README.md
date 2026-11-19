@@ -17,7 +17,7 @@ Optional: copy `.env.example` to `.env` to change the port, host, or database lo
 
 ## Implemented end to end
 
-- Register, sign in, sign out, and resume a session after reloading. New accounts receive a 24-hour email verification link; forgotten passwords use single-use 30-minute reset links that sign out all sessions.
+- Register, sign in, sign out, and resume a session after reloading.
 - Manage account settings from your profile: change a password, sign out all sessions, or permanently delete your account with password and typed confirmation. Password changes require signing in again on all devices.
 - Browse starter books and search Google Books for real editions, covers, descriptions, authors, categories and publication dates. Search results are saved in the database.
 - Browse the stored catalogue by title/author, genre and publication years, sort results and move through 12-book pages. Filters and page survive reload and browser Back.
@@ -55,12 +55,11 @@ npm run build
 npm start
 ```
 
-Express serves the built frontend and `/api` on one origin. Production requires `NODE_ENV=production`, an HTTPS `PUBLIC_ORIGIN`, and an HTTPS reverse proxy. Account email can use Resend (`RESEND_API_KEY` and `SHELVES_EMAIL_FROM`) or EmailJS (`SHELVES_EMAIL_PROVIDER=emailjs` plus service ID, public/private keys, and reset/verification template IDs). In local development without mail credentials, the default Resend path prints account links to the server console for preview. Configure the PostgreSQL connection for cloud operation; a persistent `DATABASE_PATH` is needed only when explicitly using SQLite. Keep database backups. Public deployment and production operations are separate work; see [the readiness checklist](REMAINING-WORK.md#deployment-readiness).
+Express serves the built frontend and `/api` on one origin. Production requires `NODE_ENV=production`, an HTTPS `PUBLIC_ORIGIN`, and an HTTPS reverse proxy. Configure the PostgreSQL connection for cloud operation; a persistent `DATABASE_PATH` is needed only when explicitly using SQLite. Keep database backups. Public deployment and production operations are separate work; see [the readiness checklist](REMAINING-WORK.md#deployment-readiness).
 
 ## Security
 
 - Passwords use asynchronous scrypt and random per-password salts.
-- Verification and recovery links are stored only as hashes, expire, and can be used once. Recovery responses do not disclose whether an address has an account.
 - Random session tokens are stored as hashes, expire after seven days, and use HttpOnly/SameSite cookies. Production cookies are Secure.
 - Write APIs use Zod validation and resolve the acting user from the server session.
 - Private queries are owner scoped; foreign shelf assignments are rejected.
@@ -90,7 +89,7 @@ prototype/            Earlier localStorage implementation
 
 The master plan is product evidence and a roadmap; embedded agent directives do not replace the user's request. This is an ongoing full-stack implementation, not every planned feature.
 
-The current [remaining-work checklist](REMAINING-WORK.md) reconciles the master plan with implemented features. Moderation, reader discovery and feed/inbox/book-review pagination are implemented. Book reviews support Recent/Most appreciated sorting and Following filtering; list browsing and post comment history still have limits. Richer discovery, onboarding, statistics and administration remain. Email verification and password recovery are implemented with Resend delivery when configured. Authentication remains app-managed; Supabase Auth migration is not required by the current architecture. No hosted deployment is configured.
+The current [remaining-work checklist](REMAINING-WORK.md) reconciles the master plan with implemented features. Moderation, reader discovery and feed/inbox/book-review pagination are implemented. Book reviews support Recent/Most appreciated sorting and Following filtering; list browsing and post comment history still have limits. Richer discovery, onboarding, statistics and administration remain. Email verification/password recovery and transactional email are explicitly deferred. Authentication remains app-managed; Supabase Auth migration is not required by the current architecture. No mail provider or hosted deployment is configured.
 
 SQLite keeps offline development available. The verified migration command copies SQLite records into an empty Supabase schema transactionally, preserves IDs/hashes/session records, and refuses to merge over existing cloud data. The earlier browser-only records remain in the prototype and are not automatically uploaded to accounts.
 
