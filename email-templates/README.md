@@ -1,8 +1,10 @@
-# Shelves password reset email for EmailJS
+# Shelves account emails for EmailJS
 
-**Subject:** `A fresh page for your Shelves account`
+**Password reset subject:** `A fresh page for your Shelves account`
 
-In the EmailJS template editor, set **To Email** to `{{to_email}}` and paste the contents of `password-reset.html` into the HTML content editor. Send these template parameters from the Shelves server:
+**Email verification subject:** `Verify your Shelves email`
+
+Create two EmailJS templates. In both, set **To Email** to `{{to_email}}`. Paste `password-reset.html` into the reset template and `email-verification.html` into the verification template. Both accept these parameters from the Shelves server:
 
 | Parameter | Value |
 | --- | --- |
@@ -11,4 +13,4 @@ In the EmailJS template editor, set **To Email** to `{{to_email}}` and paste the
 
 The email logo is made from inline HTML tables and text. It needs no attachment, image URL, or extra template parameter. It echoes the supplied Shelves stacked-book mark in email-safe markup.
 
-Shelves also uses this HTML for password reset emails sent through its current Resend integration in `server/account-links.ts`. Pasting it into EmailJS creates an EmailJS template but does not switch the app's mail provider.
+The EmailJS service ID is `shelves_support`, and the password-reset template ID is `template_pr8irmp`. To activate EmailJS, add its Public Key, Private Key, verification Template ID, and `SHELVES_EMAIL_PROVIDER=emailjs` to the server's private `.env` file. Never place the Private Key in browser code or commit it. Shelves sends account links from `server/account-links.ts` and will otherwise continue using Resend or local previews.

@@ -55,7 +55,7 @@ npm run build
 npm start
 ```
 
-Express serves the built frontend and `/api` on one origin. Production requires `NODE_ENV=production`, an HTTPS `PUBLIC_ORIGIN`, `RESEND_API_KEY`, `SHELVES_EMAIL_FROM` (an address on a verified sending domain), and an HTTPS reverse proxy. In local development without mail credentials, account links are printed to the server console for preview. Configure the PostgreSQL connection for cloud operation; a persistent `DATABASE_PATH` is needed only when explicitly using SQLite. Keep database backups. Public deployment and production operations are separate work; see [the readiness checklist](REMAINING-WORK.md#deployment-readiness).
+Express serves the built frontend and `/api` on one origin. Production requires `NODE_ENV=production`, an HTTPS `PUBLIC_ORIGIN`, and an HTTPS reverse proxy. Account email can use Resend (`RESEND_API_KEY` and `SHELVES_EMAIL_FROM`) or EmailJS (`SHELVES_EMAIL_PROVIDER=emailjs` plus service ID, public/private keys, and reset/verification template IDs). In local development without mail credentials, the default Resend path prints account links to the server console for preview. Configure the PostgreSQL connection for cloud operation; a persistent `DATABASE_PATH` is needed only when explicitly using SQLite. Keep database backups. Public deployment and production operations are separate work; see [the readiness checklist](REMAINING-WORK.md#deployment-readiness).
 
 ## Security
 

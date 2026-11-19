@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { createApp } from "../server/app.ts";
+import { issueAccountLink } from "../server/account-links.ts";
 import { testDatabase } from "./database.ts";
 
 test("verification and recovery links are one-use, expire, and revoke sessions", async () => {
@@ -130,6 +131,86 @@ test("verification and recovery links are one-use, expire, and revoke sessions",
     );
   } finally {
     server.close();
+    await db.close();
+  }
+});
+
+test("EmailJS receives server-generated links and the chosen templates", async () => {
+  const db = await testDatabase();
+  const envKeys = [
+    "SHELVES_EMAIL_PROVIDER",
+    "EMAILJS_SERVICE_ID",
+    "EMAILJS_PUBLIC_KEY",
+    "EMAILJS_PRIVATE_KEY",
+    "EMAILJS_RESET_TEMPLATE_ID",
+    "EMAILJS_VERIFY_TEMPLATE_ID",
+  ] as const;
+  const previous = Object.fromEntries(
+    envKeys.map((key) => [key, process.env[key]]),
+  );
+  const originalFetch = globalThis.fetch;
+  const sent: Record<string, unknown>[] = [];
+  try {
+    await db.run(
+      "INSERT INTO users (id,email,username,display_name,password_hash) VALUES (?,?,?,?,?)",
+      "emailjs-reader",
+      "emailjs@example.test",
+      "emailjs-reader",
+      "EmailJS Reader",
+      "unused",
+    );
+    Object.assign(process.env, {
+      SHELVES_EMAIL_PROVIDER: "emailjs",
+      EMAILJS_SERVICE_ID: "shelves_support",
+      EMAILJS_PUBLIC_KEY: "public-test",
+      EMAILJS_PRIVATE_KEY: "private-test",
+      EMAILJS_RESET_TEMPLATE_ID: "template_pr8irmp",
+      EMAILJS_VERIFY_TEMPLATE_ID: "template_verify_test",
+    });
+    globalThis.fetch = (async (
+      input: string | URL | Request,
+      options?: RequestInit,
+    ) => {
+      assert.equal(
+        String(input),
+        "https://api.emailjs.com/api/v1.0/email/send",
+      );
+      sent.push(JSON.parse(String(options?.body)) as Record<string, unknown>);
+      return new Response("OK", { status: 200 });
+    }) as typeof fetch;
+    const verify = await issueAccountLink(
+      db,
+      "emailjs-reader",
+      "emailjs@example.test",
+      "verify",
+    );
+    const reset = await issueAccountLink(
+      db,
+      "emailjs-reader",
+      "emailjs@example.test",
+      "reset",
+    );
+    assert.equal(sent.length, 2);
+    for (const [index, token] of [verify, reset].entries()) {
+      const payload = sent[index];
+      assert.equal(payload.service_id, "shelves_support");
+      assert.equal(payload.user_id, "public-test");
+      assert.equal(payload.accessToken, "private-test");
+      const params = payload.template_params as {
+        to_email: string;
+        action_url: string;
+      };
+      assert.equal(params.to_email, "emailjs@example.test");
+      assert.match(params.action_url, new RegExp(`token=${token}$`));
+    }
+    assert.equal(sent[0].template_id, "template_verify_test");
+    assert.equal(sent[1].template_id, "template_pr8irmp");
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const key of envKeys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
     await db.close();
   }
 });

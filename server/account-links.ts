@@ -51,6 +51,53 @@ async function deliver(email: string, purpose: Purpose, token: string) {
   const message = emailMarkup(purpose, url);
   if (purpose === "reset")
     message.html = resetEmailHtml.replaceAll("{{action_url}}", url);
+  if (process.env.SHELVES_EMAIL_PROVIDER === "emailjs") {
+    const service = process.env.EMAILJS_SERVICE_ID;
+    const key = process.env.EMAILJS_PUBLIC_KEY;
+    const template =
+      purpose === "verify"
+        ? process.env.EMAILJS_VERIFY_TEMPLATE_ID
+        : process.env.EMAILJS_RESET_TEMPLATE_ID;
+    if (!service || !key || !template)
+      throw new ApiError(503, "Email delivery is not configured yet.");
+    // Account tokens stay server-side; the browser never talks to EmailJS.
+    const payload = {
+      service_id: service,
+      template_id: template,
+      user_id: key,
+      ...(process.env.EMAILJS_PRIVATE_KEY
+        ? { accessToken: process.env.EMAILJS_PRIVATE_KEY }
+        : {}),
+      template_params: { to_email: email, action_url: url },
+    };
+    try {
+      const send = () =>
+        fetch("https://api.emailjs.com/api/v1.0/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(10000),
+        });
+      let response = await send();
+      if (response.status === 429) {
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+        response = await send();
+      }
+      if (response.ok) return;
+      console.error(`Shelves EmailJS delivery failed: HTTP ${response.status}`);
+    } catch {
+      console.error("Shelves EmailJS delivery timed out or could not connect.");
+    }
+    throw new ApiError(
+      503,
+      "Email delivery is temporarily unavailable. Please try again.",
+    );
+  }
+  if (
+    process.env.SHELVES_EMAIL_PROVIDER &&
+    process.env.SHELVES_EMAIL_PROVIDER !== "resend"
+  )
+    throw new ApiError(503, "Unknown email delivery provider.");
   const key = process.env.RESEND_API_KEY;
   const from = process.env.SHELVES_EMAIL_FROM;
   if (!key || !from) {

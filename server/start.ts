@@ -10,13 +10,23 @@ if (
   !process.env.PUBLIC_ORIGIN?.startsWith("https://")
 )
   throw new Error("Production requires an HTTPS PUBLIC_ORIGIN.");
-if (
-  process.env.NODE_ENV === "production" &&
-  (!process.env.RESEND_API_KEY || !process.env.SHELVES_EMAIL_FROM)
-)
-  throw new Error(
-    "Production requires RESEND_API_KEY and SHELVES_EMAIL_FROM for account emails.",
-  );
+if (process.env.NODE_ENV === "production") {
+  if (process.env.SHELVES_EMAIL_PROVIDER === "emailjs") {
+    if (
+      !process.env.EMAILJS_SERVICE_ID ||
+      !process.env.EMAILJS_PUBLIC_KEY ||
+      !process.env.EMAILJS_RESET_TEMPLATE_ID ||
+      !process.env.EMAILJS_VERIFY_TEMPLATE_ID ||
+      !process.env.EMAILJS_PRIVATE_KEY
+    )
+      throw new Error(
+        "Production EmailJS delivery requires service, public/private keys, and both account template IDs.",
+      );
+  } else if (!process.env.RESEND_API_KEY || !process.env.SHELVES_EMAIL_FROM)
+    throw new Error(
+      "Production requires Resend credentials or a complete EmailJS configuration.",
+    );
+}
 const db = await openRuntimeDatabase();
 const app = createApp(db);
 app.use(express.static(resolve("dist")));
