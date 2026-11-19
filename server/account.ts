@@ -4,7 +4,11 @@ import { z } from "zod";
 import type { Store } from "./store.ts";
 import { ApiError } from "./services.ts";
 import { endSession, hashPassword, verifyPassword } from "./auth.ts";
-import { registerSchema, preferencesSchema } from "../shared/types.ts";
+import {
+  registerSchema,
+  preferencesSchema,
+  type Book,
+} from "../shared/types.ts";
 
 const password = z.string().min(1).max(128);
 const newPassword = registerSchema.shape.password;
@@ -24,20 +28,47 @@ async function lockUser(db: Store, id: string) {
 
 export function accountRoutes(app: Express, db: Store) {
   app.get("/api/preferences", async (_req, res) => {
-    const row = await db.get<{ genres: string }>(
-      "SELECT genres FROM reading_preferences WHERE user_id=?",
+    const row = await db.get<{ genres: string; book_ids: string }>(
+      "SELECT genres,book_ids FROM reading_preferences WHERE user_id=?",
       owner(res),
     );
-    res.json({ genres: row ? JSON.parse(row.genres) : [], completed: !!row });
+    const bookIds: string[] = row ? JSON.parse(row.book_ids) : [];
+    const books = bookIds.length
+      ? await db.all<Book>(
+          `SELECT * FROM books WHERE id IN (${bookIds.map(() => "?").join(",")})`,
+          ...bookIds,
+        )
+      : [];
+    const byId = new Map(books.map((book) => [book.id, book]));
+    res.json({
+      genres: row ? JSON.parse(row.genres) : [],
+      bookIds,
+      books: bookIds.map((id) => byId.get(id)).filter(Boolean),
+      completed: !!row,
+    });
   });
   app.put("/api/preferences", async (req, res) => {
     const id = owner(res),
       data = preferencesSchema.parse(req.body);
-    await db.run(
-      "INSERT INTO reading_preferences (user_id,genres) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET genres=excluded.genres",
-      id,
-      JSON.stringify(data.genres),
-    );
+    await db.transaction(async (tx) => {
+      if (data.bookIds.length) {
+        const count = await tx.get<{ n: number }>(
+          `SELECT count(*) AS n FROM books WHERE id IN (${data.bookIds.map(() => "?").join(",")})`,
+          ...data.bookIds,
+        );
+        if (Number(count?.n) !== data.bookIds.length)
+          throw new ApiError(
+            400,
+            "One of these books is no longer available. Search again and choose another.",
+          );
+      }
+      await tx.run(
+        "INSERT INTO reading_preferences (user_id,genres,book_ids) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET genres=excluded.genres,book_ids=excluded.book_ids",
+        id,
+        JSON.stringify(data.genres),
+        JSON.stringify(data.bookIds),
+      );
+    });
     res.json({ ...data, completed: true });
   });
   const sensitive = rateLimit({

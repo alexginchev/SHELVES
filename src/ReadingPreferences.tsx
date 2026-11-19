@@ -1,135 +1,352 @@
 import { readingGenres } from "../shared/genres";
 import { useEffect, useState } from "react";
-import type { ReadingPreferences as Preferences, User } from "../shared/types";
+import type {
+  Book,
+  ReadingPreferences as Preferences,
+  User,
+} from "../shared/types";
 import { api, json } from "./api";
-import { ErrorMessage, Form } from "./components";
+import { Cover, ErrorMessage, Icon } from "./components";
+
+type SearchResult = { items: Book[] };
 
 export function ReadingPreferences({
   user,
   onAuth,
   onSaved,
+  starters,
 }: {
   user: User | null;
   onAuth: () => void;
   onSaved: () => Promise<void>;
+  starters: Book[];
 }) {
-  const [genres, setGenres] = useState<string[]>([]),
-    [loaded, setLoaded] = useState(false),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
-    [retry, setRetry] = useState(0);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [chosen, setChosen] = useState<Book[]>([]);
+  const [completed, setCompleted] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Book[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
   useEffect(() => {
     setLoaded(false);
-    setNotice("");
     setError("");
+    setChosen([]);
     setGenres([]);
     if (!user) return;
     const controller = new AbortController();
     api<Preferences>("/preferences", { signal: controller.signal })
       .then((data) => {
-        if (!controller.signal.aborted) {
-          setGenres(data.genres);
-          setLoaded(true);
-        }
+        if (controller.signal.aborted) return;
+        setGenres(data.genres);
+        setChosen(data.books);
+        setCompleted(data.completed);
+        setLoaded(true);
       })
-      .catch((e) => {
-        if (!controller.signal.aborted) setError(e.message);
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(cause.message);
       });
     return () => controller.abort();
   }, [user?.id, retry]);
-  async function save(selected: string[]) {
+
+  useEffect(() => {
+    const value = query.trim();
+    setSearchError("");
+    if (value.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setResults([]);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setSearching(true);
+      api<SearchResult>(`/books/search?q=${encodeURIComponent(value)}`, {
+        signal: controller.signal,
+      })
+        .then((data) => {
+          if (!controller.signal.aborted) setResults(data.items);
+        })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setSearchError(cause.message);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setSearching(false);
+        });
+    }, 350);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
+  function toggle(book: Book) {
+    setNotice("");
+    setChosen((current) =>
+      current.some((item) => item.id === book.id)
+        ? current.filter((item) => item.id !== book.id)
+        : current.length < 3
+          ? [...current, book]
+          : current,
+    );
+  }
+
+  async function save() {
     if (busy) return;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      await api("/preferences", json("PUT", { genres: selected }));
-      setGenres(selected);
-      await onSaved();
-      setNotice(
-        selected.length
-          ? "Your reading preferences are saved. Discover has fresh suggestions for you."
-          : "Preferences saved without favorite genres. Your reading activity will still shape suggestions.",
+      await api(
+        "/preferences",
+        json("PUT", { genres, bookIds: chosen.map((book) => book.id) }),
       );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save preferences.");
+      await onSaved();
+      setCompleted(true);
+      setNotice(
+        "Your reading orbit is ready. Picks, readers, and posts now follow your taste.",
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not save your books.",
+      );
     } finally {
       setBusy(false);
     }
   }
+
+  const suggestions = query.trim().length >= 2 ? results : starters;
   return (
-    <section className="view-panel reading-preferences">
-      <span className="section-kicker">MAKE THIS NOOK YOURS</span>
-      <h2>What do you love to read?</h2>
-      <p>
-        Choose up to five favorite genres to guide your recommendations. These
-        choices are private, and you can change them any time.
-      </p>
+    <section className="view-panel taste-page">
+      <div className="taste-intro">
+        <div>
+          <h2>Find your people through books.</h2>
+          <p>
+            Pick three books you love. We’ll shape your next reads, readers to
+            know, and the conversations you see.
+          </p>
+        </div>
+        <div
+          className="taste-progress"
+          aria-label={`${chosen.length} of 3 books chosen`}
+        >
+          <strong>
+            {chosen.length}
+            <span>/3</span>
+          </strong>
+          <span>books in your orbit</span>
+        </div>
+      </div>
       <ErrorMessage message={error} />
       {!user ? (
-        <button className="primary-btn" onClick={onAuth}>
-          Sign in to choose preferences
-        </button>
+        <div className="taste-guest">
+          <div className="taste-guest-covers" aria-hidden="true">
+            {starters.slice(0, 3).map((book) => (
+              <Cover key={book.id} book={book} />
+            ))}
+          </div>
+          <div>
+            <strong>Your shelf starts here.</strong>
+            <p>
+              Choose the stories that stayed with you, then meet readers on the
+              same wavelength.
+            </p>
+            <button className="primary-btn" onClick={onAuth}>
+              Sign in to choose books <Icon name="arrow" />
+            </button>
+          </div>
+        </div>
       ) : !loaded ? (
         error ? (
-          <button className="outline-btn" onClick={() => setRetry(retry + 1)}>
+          <button
+            className="outline-btn"
+            onClick={() => setRetry((value) => value + 1)}
+          >
             Try again
           </button>
         ) : (
-          <p role="status">Loading your preferences…</p>
+          <p role="status">Opening your reading orbit…</p>
         )
       ) : (
-        <Form
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save(genres);
-          }}
-        >
-          <fieldset className="genre-options" disabled={busy}>
-            <legend>Favorite genres ({genres.length}/5)</legend>
-            {readingGenres.map((genre) => (
-              <label key={genre}>
-                <input
-                  type="checkbox"
-                  checked={genres.includes(genre)}
-                  disabled={!genres.includes(genre) && genres.length >= 5}
-                  onChange={(e) => {
-                    setNotice("");
-                    setGenres(
-                      e.target.checked
-                        ? [...genres, genre]
-                        : genres.filter((g) => g !== genre),
-                    );
-                  }}
-                />
-                {genre}
-              </label>
-            ))}
-          </fieldset>
-          <p>
-            Recommendations come from the current book catalogue. Ratings, saved
-            books and dismissed suggestions also shape what appears.
-          </p>
-          <div className="account-actions">
-            <button className="primary-btn" disabled={busy}>
-              {busy ? "Saving…" : "Save preferences"}
-            </button>
-            <button
-              className="plain-link"
-              type="button"
-              disabled={busy}
-              onClick={() => void save([])}
-            >
-              Continue without favorite genres
-            </button>
+        <>
+          <div className="taste-slots" aria-live="polite">
+            {[0, 1, 2].map((index) => {
+              const book = chosen[index];
+              return (
+                <div
+                  className={`taste-slot ${book ? "filled" : ""}`}
+                  key={index}
+                >
+                  {book ? (
+                    <>
+                      <Cover book={book} />
+                      <div className="taste-slot-caption">
+                        <strong>{book.title}</strong>
+                        <span>{book.author}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="taste-remove"
+                        onClick={() => toggle(book)}
+                        aria-label={`Remove ${book.title}`}
+                        title={`Remove ${book.title}`}
+                      >
+                        <Icon name="close" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="taste-slot-number">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span>One you’d recommend to a friend</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          {notice ? <p role="status">{notice}</p> : null}
-          <a className="plain-link" href="#discover">
-            Explore recommendations ↗
-          </a>
-        </Form>
+          <div className="taste-search">
+            <label htmlFor="taste-book-search">Find a book you love</label>
+            <div className="taste-search-field">
+              <Icon name="search" />
+              <input
+                id="taste-book-search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Title, author, or ISBN"
+                autoComplete="off"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                >
+                  <Icon name="close" />
+                </button>
+              )}
+            </div>
+            {searching && <span role="status">Looking for books…</span>}
+            {searchError && (
+              <p role="alert">
+                {searchError}{" "}
+                <button
+                  type="button"
+                  className="plain-link"
+                  onClick={() => setQuery((value) => `${value} `)}
+                >
+                  Try again
+                </button>
+              </p>
+            )}
+          </div>
+          <div className="taste-picks-heading">
+            <h3>
+              {query.trim().length >= 2
+                ? "Search results"
+                : "A few to get you started"}
+            </h3>
+            <span>
+              {chosen.length === 3
+                ? "Your three are set"
+                : "Tap a cover to add it"}
+            </span>
+          </div>
+          <div className="taste-book-grid">
+            {suggestions.slice(0, 12).map((book) => {
+              const selected = chosen.some((item) => item.id === book.id);
+              return (
+                <button
+                  type="button"
+                  key={book.id}
+                  className={`taste-book ${selected ? "selected" : ""}`}
+                  onClick={() => toggle(book)}
+                  disabled={!selected && chosen.length === 3}
+                  aria-pressed={selected}
+                  aria-label={`${selected ? "Remove" : "Choose"} ${book.title} by ${book.author}`}
+                >
+                  <span className="taste-cover">
+                    <Cover book={book} />
+                    <span className="taste-select-mark">
+                      <Icon name={selected ? "check" : "plus"} />
+                    </span>
+                  </span>
+                  <strong>{book.title}</strong>
+                  <small>{book.author}</small>
+                </button>
+              );
+            })}
+          </div>
+          {query.trim().length >= 2 &&
+            !searching &&
+            !searchError &&
+            !results.length && (
+              <p>No books found. Try a different title or author.</p>
+            )}
+          <details className="taste-genres">
+            <summary>
+              Fine-tune with genres{" "}
+              <span>
+                {genres.length ? `${genres.length} selected` : "Optional"}
+              </span>
+            </summary>
+            <fieldset className="genre-options" disabled={busy}>
+              <legend>Choose up to five</legend>
+              {readingGenres.map((genre) => (
+                <label key={genre}>
+                  <input
+                    type="checkbox"
+                    checked={genres.includes(genre)}
+                    disabled={!genres.includes(genre) && genres.length >= 5}
+                    onChange={(event) =>
+                      setGenres((current) =>
+                        event.target.checked
+                          ? [...current, genre]
+                          : current.filter((item) => item !== genre),
+                      )
+                    }
+                  />
+                  {genre}
+                </label>
+              ))}
+            </fieldset>
+          </details>
+          <div className="taste-footer">
+            <p>Your choices stay private. You can change them any time.</p>
+            <div>
+              <button
+                type="button"
+                className="primary-btn"
+                disabled={busy || chosen.length < 3}
+                onClick={() => void save()}
+              >
+                {busy
+                  ? "Saving…"
+                  : completed
+                    ? "Update my orbit"
+                    : "Show my orbit"}{" "}
+                <Icon name="arrow" />
+              </button>
+              {completed && (
+                <a className="outline-btn" href="#discover">
+                  Explore your picks
+                </a>
+              )}
+            </div>
+          </div>
+          {notice && (
+            <p role="status" className="taste-saved">
+              {notice} <a href="#discover">See your picks</a>
+            </p>
+          )}
+        </>
       )}
     </section>
   );

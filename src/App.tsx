@@ -69,7 +69,7 @@ const views = {
   safety: "Your reading circle controls",
   moderation: "Community reports",
   "moderation-accounts": "Account moderation",
-  preferences: "Your reading preferences",
+  preferences: "Your reading orbit",
   author: "Authors",
   catalog: "Browse the catalogue",
   readers: "Find your reading people",
@@ -126,6 +126,7 @@ type Snapshot = {
   stats: Stats | null;
   unreadNotifications: number;
   preferencesCompleted: boolean;
+  favoriteBookCount: number;
 };
 const empty: Snapshot = {
   user: null,
@@ -138,6 +139,7 @@ const empty: Snapshot = {
   stats: null,
   unreadNotifications: 0,
   preferencesCompleted: false,
+  favoriteBookCount: 0,
 };
 export function App() {
   const [data, setData] = useState<Snapshot>(empty),
@@ -677,6 +679,9 @@ export function App() {
                   user={data.user}
                   onAuth={() => setAuth(true)}
                   onSaved={refresh}
+                  starters={data.books
+                    .filter((book) => book.id.startsWith("seed-"))
+                    .slice(0, 12)}
                 />
               ) : null}
               {!loading && view === "notifications" ? (
@@ -761,6 +766,25 @@ export function App() {
               ) : null}
               {!loading && view === "home" ? (
                 <>
+                  {data.user && data.favoriteBookCount < 3 ? (
+                    <a className="taste-invite" href="#preferences">
+                      <span className="taste-invite-covers" aria-hidden="true">
+                        {data.books
+                          .filter((book) => book.id.startsWith("seed-"))
+                          .slice(0, 3)
+                          .map((book) => (
+                            <Cover key={book.id} book={book} />
+                          ))}
+                      </span>
+                      <span className="taste-invite-copy">
+                        <strong>Start with three books you love.</strong>
+                        <span>Find your next read and readers who get it.</span>
+                      </span>
+                      <span className="taste-invite-arrow">
+                        <Icon name="arrow" />
+                      </span>
+                    </a>
+                  ) : null}
                   {data.user ? (
                     <details className="home-reading-strip">
                       <summary>
@@ -843,10 +867,10 @@ export function App() {
                       <span>How your feed works</span>
                     </summary>
                     <p>
-                      For you balances recent conversations, people you follow
-                      and books or genres you have publicly reviewed highly.
-                      Private notes and reading progress are never used. Latest
-                      shows posts in date order.
+                      For you balances recent conversations, people you follow,
+                      and books or genres you picked here or reviewed publicly.
+                      Your chosen books stay private. Notes and reading progress
+                      are never used. Latest shows posts in date order.
                     </p>
                   </details>
                   <div className="feed-list">
@@ -880,37 +904,68 @@ export function App() {
                     {!visiblePosts.length &&
                     !feedPage.busy &&
                     !feedPage.error ? (
-                      <section className="view-panel empty-state">
-                        <span className="section-kicker">
-                          GOOD CONVERSATIONS START SMALL
-                        </span>
-                        <h2>
-                          {filter === "following"
-                            ? data.stats?.following
-                              ? "Your reading circle is quiet."
-                              : "Build your reading circle."
-                            : "The next story could be yours."}
-                        </h2>
-                        <p>
-                          {filter === "following"
-                            ? data.stats?.following
-                              ? "New public reviews, posts and shared reading progress from your circle will appear here."
-                              : "Follow other readers to see their public reviews, posts and shared reading progress here."
-                            : "Share a thought about what you are reading, or find your next book."}
-                        </p>
-                        <button
-                          className="primary-btn"
-                          onClick={() =>
-                            filter === "following"
-                              ? navigate("readers")
-                              : startPost()
-                          }
-                        >
-                          {filter === "following"
-                            ? "Find readers ↗"
-                            : "Share a thought ↗"}
-                        </button>
-                      </section>
+                      filter === "all" &&
+                      data.favoriteBookCount === 3 &&
+                      data.recommendations.length ? (
+                        <section className="taste-feed-start">
+                          <div>
+                            <h2>Start with a good book.</h2>
+                            <p>
+                              Your reading orbit has already found a few paths
+                              in. Conversations from readers will appear here as
+                              they arrive.
+                            </p>
+                            <a href="#discover" className="outline-btn">
+                              See your picks <Icon name="arrow" />
+                            </a>
+                          </div>
+                          <div className="taste-feed-covers">
+                            {data.recommendations.slice(0, 2).map((book) => (
+                              <button
+                                type="button"
+                                key={book.id}
+                                onClick={() => openBookPage(book)}
+                                aria-label={`Open ${book.title}`}
+                              >
+                                <Cover book={book} />
+                                <span>{book.title}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+                      ) : (
+                        <section className="view-panel empty-state">
+                          <span className="section-kicker">
+                            GOOD CONVERSATIONS START SMALL
+                          </span>
+                          <h2>
+                            {filter === "following"
+                              ? data.stats?.following
+                                ? "Your reading circle is quiet."
+                                : "Build your reading circle."
+                              : "The next story could be yours."}
+                          </h2>
+                          <p>
+                            {filter === "following"
+                              ? data.stats?.following
+                                ? "New public reviews, posts and shared reading progress from your circle will appear here."
+                                : "Follow other readers to see their public reviews, posts and shared reading progress here."
+                              : "Share a thought about what you are reading, or find your next book."}
+                          </p>
+                          <button
+                            className="primary-btn"
+                            onClick={() =>
+                              filter === "following"
+                                ? navigate("readers")
+                                : startPost()
+                            }
+                          >
+                            {filter === "following"
+                              ? "Find readers ↗"
+                              : "Share a thought ↗"}
+                          </button>
+                        </section>
+                      )
                     ) : null}
                   </div>
                 </>

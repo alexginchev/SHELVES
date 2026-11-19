@@ -1538,7 +1538,7 @@ test("private reading preferences persist and influence recommendations", async 
     );
     assert.deepEqual(
       await (await call("/preferences", "GET", undefined, cookies[0])).json(),
-      { genres: [], completed: false },
+      { genres: [], bookIds: [], books: [], completed: false },
     );
     for (const genres of [
       ["invalid"],
@@ -1556,11 +1556,11 @@ test("private reading preferences persist and influence recommendations", async 
     );
     assert.deepEqual(
       await (await call("/preferences", "GET", undefined, cookies[0])).json(),
-      { genres: ["Fantasy"], completed: true },
+      { genres: ["Fantasy"], bookIds: [], books: [], completed: true },
     );
     assert.deepEqual(
       await (await call("/preferences", "GET", undefined, cookies[1])).json(),
-      { genres: [], completed: false },
+      { genres: [], bookIds: [], books: [], completed: false },
     );
     const suggestions = await recommendations(db, userId);
     assert.equal(suggestions[0].genre, "Fantasy");
@@ -1580,11 +1580,57 @@ test("private reading preferences persist and influence recommendations", async 
     await call("/preferences", "PUT", { genres: [] }, cookies[0]);
     assert.deepEqual(
       await (await call("/preferences", "GET", undefined, cookies[0])).json(),
-      { genres: [], completed: true },
+      { genres: [], bookIds: [], books: [], completed: true },
     );
     assert(
       !(await recommendations(db, userId)).some((b) =>
         b.reason.startsWith("Because you chose"),
+      ),
+    );
+    const favoriteIds = ["seed-piranesi", "seed-garden", "seed-sweetgrass"];
+    for (const bookIds of [
+      ["seed-piranesi", "seed-piranesi"],
+      [...favoriteIds, "seed-creatures"],
+      ["missing-book"],
+    ])
+      assert.equal(
+        (await call("/preferences", "PUT", { genres: [], bookIds }, cookies[0]))
+          .status,
+        400,
+      );
+    assert.equal(
+      (
+        await call(
+          "/preferences",
+          "PUT",
+          { genres: [], bookIds: favoriteIds },
+          cookies[0],
+        )
+      ).status,
+      200,
+    );
+    const picked = (await (
+      await call("/preferences", "GET", undefined, cookies[0])
+    ).json()) as { bookIds: string[]; books: Book[] };
+    assert.deepEqual(picked.bookIds, favoriteIds);
+    assert.deepEqual(
+      picked.books.map((book) => book.id),
+      favoriteIds,
+    );
+    assert.deepEqual(
+      await (await call("/preferences", "GET", undefined, cookies[1])).json(),
+      { genres: [], bookIds: [], books: [], completed: false },
+    );
+    const firstPicks = await recommendations(db, userId);
+    assert(firstPicks.length > 0);
+    assert(!firstPicks.some((book) => favoriteIds.includes(book.id)));
+    const snapshot = (await (
+      await call("/snapshot", "GET", undefined, cookies[0])
+    ).json()) as { favoriteBookCount: number };
+    assert.equal(snapshot.favoriteBookCount, 3);
+    assert(
+      !JSON.stringify(await (await call(`/readers/${userId}`)).json()).includes(
+        '"bookIds"',
       ),
     );
   } finally {
@@ -3697,6 +3743,19 @@ test("reader matches use only public reviews and honor social safety", async () 
     await db.run("DELETE FROM posts WHERE user_id=?", "match_me");
     readers = await readerSuggestions(db, "match_me");
     assert(readers.every((r) => r.reason === "Explore their reading corner"));
+    await db.run(
+      "INSERT INTO reading_preferences(user_id,genres,book_ids) VALUES(?,?,?)",
+      "match_me",
+      "[]",
+      '["match_book"]',
+    );
+    readers = await readerSuggestions(db, "match_me");
+    assert.equal(readers[0].id, "match_same");
+    assert.equal(readers[0].reason, "Enjoyed 1 book in your reading orbit");
+    assert.equal(
+      readers.find((reader) => reader.id === "match_private")?.reason,
+      "Explore their reading corner",
+    );
   } finally {
     await db.close();
   }

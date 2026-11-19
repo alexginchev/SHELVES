@@ -22,11 +22,20 @@ export async function recommendations(
 ): Promise<Recommendation[]> {
   const hidden = await hiddenReaders(db, userId);
   const preference = userId
-    ? await db.get<{ genres: string }>(
-        "SELECT genres FROM reading_preferences WHERE user_id=?",
+    ? await db.get<{ genres: string; book_ids: string }>(
+        "SELECT genres,book_ids FROM reading_preferences WHERE user_id=?",
         userId,
       )
     : undefined;
+  const favoriteIds: string[] = preference
+    ? JSON.parse(preference.book_ids)
+    : [];
+  const favorites = favoriteIds.length
+    ? await db.all<Book>(
+        `SELECT * FROM books WHERE id IN (${favoriteIds.map(() => "?").join(",")})`,
+        ...favoriteIds,
+      )
+    : [];
   const preferred = new Set<string>(
     preference ? JSON.parse(preference.genres) : [],
   );
@@ -42,6 +51,9 @@ export async function recommendations(
         CASE WHEN r.rating>=4 THEN r.rating-3 WHEN r.rating BETWEEN 1 AND 2 THEN -1
           WHEN r.status IN ('Want to read','Currently reading') THEN 1 ELSE 0 END AS weight
       FROM reading r JOIN books b ON b.id=r.book_id WHERE r.user_id=?
+      UNION ALL
+      SELECT b.genre,lower(b.author),4 AS weight FROM books b
+      WHERE b.id IN (${favoriteIds.length ? favoriteIds.map(() => "?").join(",") : "NULL"})
     ), genres AS (SELECT genre,SUM(weight) AS affinity FROM taste GROUP BY genre),
     authors AS (SELECT author,SUM(weight) AS affinity FROM taste GROUP BY author),
     reviews AS (
@@ -65,6 +77,7 @@ export async function recommendations(
       AND NOT EXISTS(SELECT 1 FROM recommendation_feedback h WHERE h.user_id=? AND h.book_id=b.id)
     ORDER BY score DESC,CASE WHEN b.id LIKE 'seed-%' THEN 0 ELSE 1 END,lower(b.title),b.id LIMIT 500`,
     userId,
+    ...favoriteIds,
     userId,
     userId,
     ...hidden,
@@ -81,7 +94,7 @@ export async function recommendations(
         userId,
       )
     : [];
-  const seen = new Set(excluded.map(workKey)),
+  const seen = new Set([...excluded, ...favorites].map(workKey)),
     authorCounts = new Map<string, number>(),
     genreCounts = new Map<string, number>();
   const metadataRows = await db.all<{ book_id: string; details: string }>(
@@ -90,16 +103,7 @@ export async function recommendations(
   const metadata = new Map(
     metadataRows.map((r) => [r.book_id, JSON.parse(r.details) as BookMetadata]),
   );
-  const hasTaste =
-    preferred.size > 0 ||
-    !!(
-      userId &&
-      (await db.get(
-        "SELECT book_id FROM reading WHERE user_id=? AND (rating>=4 OR status IN ('Want to read','Currently reading')) LIMIT 1",
-        userId,
-      ))
-    );
-  const remaining = candidates.filter((b) => {
+  const relevantCandidates = candidates.filter((b) => {
     if (
       seen.has(workKey(b)) ||
       b.authorAffinity < 0 ||
@@ -112,8 +116,18 @@ export async function recommendations(
       b.authorAffinity > 0 ||
       b.circle > 0 ||
       b.community > 0;
-    return relevant || (!hasTaste && b.id.startsWith("seed-"));
+    return relevant;
   });
+  // An empty cold start still has something real to browse. Once there are
+  // strong matches, off-theme starter titles no longer fill recommendation slots.
+  const remaining = relevantCandidates.length
+    ? relevantCandidates
+    : candidates.filter(
+        (book) =>
+          book.id.startsWith("seed-") &&
+          !seen.has(workKey(book)) &&
+          recommendationQuality(book, metadata.get(book.id) || null),
+      );
   const result: Recommendation[] = [];
   while (remaining.length && result.length < 24) {
     // A small diversity penalty preserves strong matches while letting other genres surface.
@@ -138,18 +152,29 @@ export async function recommendations(
     seen.add(key);
     authorCounts.set(author, (authorCounts.get(author) || 0) + 1);
     genreCounts.set(book.genre, (genreCounts.get(book.genre) || 0) + 1);
+    const favoriteAuthor = favorites.find(
+      (picked) =>
+        identity(picked.author) === author && author !== "unknown author",
+    );
+    const favoriteGenre = favorites.find(
+      (picked) => picked.genre === book.genre,
+    );
     const reason =
       circle > 0
         ? `Rated highly by ${circle === 1 ? "a reader you follow" : "readers you follow"}`
-        : preferred.has(book.genre)
-          ? `Because you chose ${book.genre.toLowerCase()}`
-          : authorAffinity > 0
-            ? `More from ${book.author}`
-            : genreAffinity > 0
-              ? `Inspired by your interest in ${book.genre.toLowerCase()}`
-              : community > 0
-                ? "Rated highly in public community reviews"
-                : "From the Shelves starter collection";
+        : favoriteAuthor
+          ? `Because you loved ${favoriteAuthor.title}`
+          : favoriteGenre
+            ? `In the world of ${favoriteGenre.genre.toLowerCase()} you love`
+            : preferred.has(book.genre)
+              ? `Because you chose ${book.genre.toLowerCase()}`
+              : authorAffinity > 0
+                ? `More from ${book.author}`
+                : genreAffinity > 0
+                  ? `Inspired by your interest in ${book.genre.toLowerCase()}`
+                  : community > 0
+                    ? "Rated highly in public community reviews"
+                    : "From the Shelves starter collection";
     result.push({ ...book, reason });
   }
   return result;

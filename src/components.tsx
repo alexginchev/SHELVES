@@ -54,6 +54,9 @@ export function Icon({ name }: { name: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    close: <path d="M5 5l14 14M19 5 5 19" />,
+    check: <path d="m4 12 5 5L20 6" />,
+    arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
     arrowUpRight: <path d="M6 18 18 6M8 6h10v10" />,
     moon: <path d="M20.9 13.2A9 9 0 0 1 10.8 3.1 9 9 0 1 0 20.9 13.2Z" />,
     sun: (

@@ -153,7 +153,10 @@ export function createApp(db: Store) {
       unreadCount,
       preferences,
     ] = await Promise.all([
-      all(db, "SELECT * FROM books ORDER BY id LIMIT 100"),
+      all(
+        db,
+        "SELECT * FROM books ORDER BY CASE WHEN id LIKE 'seed-%' THEN 0 ELSE 1 END,id LIMIT 100",
+      ),
       recommendations(db, me?.id),
       feed(db, me?.id),
       readerSuggestions(db, me?.id),
@@ -163,7 +166,7 @@ export function createApp(db: Store) {
       me ? unreadNotifications(db, me.id) : 0,
       me
         ? db.get(
-            "SELECT user_id FROM reading_preferences WHERE user_id=?",
+            "SELECT book_ids FROM reading_preferences WHERE user_id=?",
             me.id,
           )
         : undefined,
@@ -179,6 +182,9 @@ export function createApp(db: Store) {
       stats: readingStats,
       unreadNotifications: unreadCount,
       preferencesCompleted: !!preferences,
+      favoriteBookCount: preferences
+        ? JSON.parse((preferences as { book_ids: string }).book_ids).length
+        : 0,
     });
   });
   const authLimiter = rateLimit({

@@ -47,8 +47,21 @@ export const preferencesSchema = z.object({
       (values) => new Set(values).size === values.length,
       "Choose each genre only once.",
     ),
+  bookIds: z
+    .array(z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/))
+    .max(3)
+    .refine(
+      (ids) => new Set(ids).size === ids.length,
+      "Choose each book only once.",
+    )
+    .default([]),
 });
-export type ReadingPreferences = { genres: string[]; completed: boolean };
+export type ReadingPreferences = {
+  genres: string[];
+  bookIds: string[];
+  books: Book[];
+  completed: boolean;
+};
 export const listSchema = z.object({
   title: z.string().trim().min(1).max(100),
   description: z.string().trim().max(1000),

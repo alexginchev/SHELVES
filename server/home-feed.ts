@@ -64,13 +64,30 @@ export function createHomeFeed(db: Store) {
             ).map((x) => x.id)
           : [],
       );
-      // Only the viewer's public positive reviews supply book/genre affinity.
+      // Private onboarding picks personalize this viewer's order only; posts
+      // remain public and no private picks are attached to returned content.
       const reviews = viewer
         ? await db.all<{ id: string; genre: string }>(
             "SELECT p.book_id AS id,b.genre FROM posts p JOIN books b ON b.id=p.book_id WHERE p.user_id=? AND p.kind='review' AND p.rating>=4",
             viewer,
           )
         : [];
+      const preference = viewer
+        ? await db.get<{ book_ids: string }>(
+            "SELECT book_ids FROM reading_preferences WHERE user_id=?",
+            viewer,
+          )
+        : undefined;
+      const favoriteIds: string[] = preference
+        ? JSON.parse(preference.book_ids)
+        : [];
+      const favoriteBooks = favoriteIds.length
+        ? await db.all<{ id: string; genre: string }>(
+            `SELECT id,genre FROM books WHERE id IN (${favoriteIds.map(() => "?").join(",")})`,
+            ...favoriteIds,
+          )
+        : [];
+      reviews.push(...favoriteBooks);
       const books = new Set(reviews.map((x) => x.id)),
         genres = new Set(reviews.map((x) => x.genre));
       const pool = candidates.map((p) => {
@@ -102,7 +119,9 @@ export function createHomeFeed(db: Store) {
           reason: followed
             ? "From your circle"
             : affinity
-              ? "Based on your public reviews"
+              ? favoriteBooks.length
+                ? "In your reading orbit"
+                : "Based on your public reviews"
               : engagement > 1
                 ? "Readers are talking"
                 : "New in the community",

@@ -418,8 +418,17 @@ export async function userShelves(db: Store, userId: string) {
 }
 export async function readerSuggestions(db: Store, userId = "") {
   const hidden = await hiddenReaders(db, userId);
-  // Only public reviews are evidence of shared taste. Private reading records and
-  // onboarding preferences must never contribute to reader-to-reader explanations.
+  const preference = userId
+    ? await db.get<{ book_ids: string }>(
+        "SELECT book_ids FROM reading_preferences WHERE user_id=?",
+        userId,
+      )
+    : undefined;
+  const favoriteIds: string[] = preference
+    ? JSON.parse(preference.book_ids)
+    : [];
+  // Private picks guide only this viewer's suggestions. Candidate reader
+  // evidence comes from public reviews; picks are never sent to others.
   const rows = await all<
     Reader & { shared: number | string; genres: number | string }
   >(
@@ -430,7 +439,11 @@ export async function readerSuggestions(db: Store, userId = "") {
         lower(trim(b.author)) AS author, b.genre
       FROM posts p JOIN books b ON b.id=p.book_id
       WHERE p.kind='review' AND p.rating>=4
-    ), mine AS (SELECT * FROM favorites WHERE user_id=?),
+    ), mine AS (
+      SELECT title,author,genre FROM favorites WHERE user_id=?
+      UNION SELECT lower(trim(title)),lower(trim(author)),genre FROM books
+      WHERE id IN (${favoriteIds.length ? favoriteIds.map(() => "?").join(",") : "NULL"})
+    ),
     shared_books AS (
       SELECT f.user_id,count(*) AS n FROM
         (SELECT DISTINCT f.user_id,f.title,f.author FROM favorites f
@@ -451,6 +464,7 @@ export async function readerSuggestions(db: Store, userId = "") {
     WHERE u.id!=? ${hidden.length ? `AND u.id NOT IN (${hidden.map(() => "?").join(",")})` : ""}
     ORDER BY shared DESC,genres DESC,following ASC,u.created_at DESC,u.id LIMIT 30`,
     userId,
+    ...favoriteIds,
     userId,
     userId,
     ...hidden,
@@ -461,9 +475,13 @@ export async function readerSuggestions(db: Store, userId = "") {
     following: !!reader.following,
     reason:
       Number(shared) > 0
-        ? `You both rated ${shared} ${Number(shared) === 1 ? "book" : "books"} highly in public reviews`
+        ? favoriteIds.length
+          ? `Enjoyed ${shared} ${Number(shared) === 1 ? "book" : "books"} in your reading orbit`
+          : `You both rated ${shared} ${Number(shared) === 1 ? "book" : "books"} highly in public reviews`
         : Number(genres) > 0
-          ? `Your public reviews share ${genres} ${Number(genres) === 1 ? "genre" : "genres"}`
+          ? favoriteIds.length
+            ? `Reads ${genres} ${Number(genres) === 1 ? "genre" : "genres"} you like`
+            : `Your public reviews share ${genres} ${Number(genres) === 1 ? "genre" : "genres"}`
           : "Explore their reading corner",
   }));
 }
