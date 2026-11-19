@@ -3,13 +3,13 @@ version: alpha
 name: Shelves
 description: "A reading community whose home opens on a three-dimensional shelf of recommended books."
 colors:
-  canvas: "#121212"
-  surface: "#1B1B1B"
-  foreground: "#F4F2EF"
-  muted: "#B7B5B2"
-  rule: "#363535"
-  focus: "#ECA384"
-  brandAccent: "#F29A68"
+  canvas: "#111416"
+  surface: "#1D2224"
+  foreground: "#F6F3ED"
+  muted: "#B9C1BF"
+  rule: "#343B3C"
+  focus: "#F1A786"
+  brandAccent: "#F1A077"
 typography:
   display:
     fontFamily: "Cabinet Grotesk, Arial, sans-serif"
@@ -21,8 +21,10 @@ rounded:
   sm: "0.375rem"
   md: "0.75rem"
 spacing:
-  page-max: "1384px"
+  page-max: "1380px"
   section-gap: "1.5rem"
+  page-gutter: "clamp(18px, 3.4vw, 52px)"
+  card-padding: "clamp(20px, 2.4vw, 32px)"
 ---
 
 # Shelves Design System
@@ -45,7 +47,7 @@ Cabinet Grotesk Medium carries interface text and descriptions. Extrabold carrie
 
 ## Layout
 
-The shelf occupies the width of the Home stage, with recommendations and actions centered under its description. The rest of the Home feed follows below. On phones the shelf scales with the available width, the synopsis sits in normal flow, and the frame grows to contain it. Search occupies a separate row from the logo and appearance controls. Keep a 44px minimum target for the main controls.
+The shelf occupies the width of the Home stage, with recommendations and actions centered under its description. The rest of the Home feed follows below. On phones the shelf scales with the available width, the synopsis sits in normal flow, and the frame grows to contain it. Search occupies a separate row from the logo and appearance controls. Secondary destinations sit in a compact disclosure below the page heading. Keep a 44px minimum target for the main controls. Use the shared page gutter and card padding for every route; collection pages keep a consistent 24–28px section rhythm. The optional right rail disappears below 1200px so primary content has room to breathe.
 
 ## Components
 
@@ -59,4 +61,4 @@ The shelf occupies the width of the Home stage, with recommendations and actions
 
 ## Runtime mapping
 
-`src/editorial.css` owns the current palette and typography. In order, the default colors above map to `--paper`, `--white`, `--ink`, `--ink-soft`, `--line` and `--coral`. The light theme maps those semantic tokens on `html[data-theme="light"]`. `src/design.css` maps them to utilities, while `src/app.css` provides the underlying component layout. The isolated shelf uses its supplied CSS and aligns its canvas, theme and typography through `public/featured-shelf/shelves.css`.
+`src/layout-overhaul.css` owns the final semantic palette, page width, gutters, card padding, and shared responsive spacing. It loads after `src/design.css` so its rules resolve earlier page-specific styles consistently. The light theme maps the same tokens on `html[data-theme="light"]`. `src/design.css` maps them to utilities; `src/app.css` and `src/editorial.css` provide the underlying components and editorial details. The isolated shelf uses its supplied CSS and aligns its canvas, theme and typography through `public/featured-shelf/shelves.css`.

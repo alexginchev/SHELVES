@@ -577,28 +577,32 @@ export function App() {
               )}
             </div>
           </header>
-          <nav
-            className={`mobile-secondary ${view === "home" ? "home-shortcuts" : ""}`}
-            aria-label="More navigation"
-          >
-            <a
-              href="#community"
-              aria-label="Reading circle"
-              title="Reading circle"
+          <details className="mobile-secondary">
+            <summary>
+              <Icon name="shelves" />
+              <span>More to explore</span>
+              <Icon name="chevron" />
+            </summary>
+            <nav
+              aria-label="More navigation"
+              onClick={(event) =>
+                event.currentTarget.closest("details")?.removeAttribute("open")
+              }
             >
-              Reading circle
-            </a>
-            <a
-              href="#journal"
-              aria-label="Reading journal"
-              title="Reading journal"
-            >
-              Reading journal
-            </a>
-            <a href="#lists" aria-label="Book lists" title="Book lists">
-              Book lists
-            </a>
-          </nav>
+              <a href="#community">
+                <Icon name="community" />
+                Reading circle
+              </a>
+              <a href="#journal">
+                <Icon name="journal" />
+                Reading journal
+              </a>
+              <a href="#lists">
+                <Icon name="shelves" />
+                Book lists
+              </a>
+            </nav>
+          </details>
           {error ? (
             <div className="load-error" role="alert">
               <span>{error}</span>
