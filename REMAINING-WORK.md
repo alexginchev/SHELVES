@@ -4,6 +4,13 @@ Reconciled on 1 November 2026 against the master plan, implementation history, c
 
 The application is functional but the full master plan is not complete. “Implemented” below describes code present, not a claim that every production condition has been verified.
 
+## 24 November 2026 checkout review
+
+- Reading Orbit now lets signed-in readers save three favorite books and up to five optional genres. These private choices inform recommendations and Home ranking. Public profile pins and favorite-author onboarding remain open.
+- Home has ranked For You conversations, list cards have artwork, and a light/dark toggle is available. The baseline table below predates these changes.
+- The next recommendation milestone is to use similar readers’ public reviews as a source of book recommendations. Current ranking uses personal taste, followed-reader reviews, and a thresholded community rating signal.
+- This review used the downloaded GitHub `main` snapshot at `a766de4`. The original checkout is required to reconcile any changes that were never committed or exported.
+
 ## Accepted boundaries
 
 - Preserve Shelves and the supplied watercolor, paper-and-sage design in DESIGN.md.

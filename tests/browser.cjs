@@ -79,6 +79,17 @@ const { auditLayout } = require("./layout.cjs");
     await page
       .getByRole("link", { name: "Reading preferences", exact: true })
       .click();
+    const orbitBooks = page.getByRole("button", { name: /^Choose .+ by / });
+    const chosenBooks = [];
+    assert(await page.getByRole("button", { name: "Show my orbit" }).isDisabled());
+    for (let index = 0; index < 3; index++) {
+      const book = orbitBooks.first();
+      const name = await book.getAttribute("aria-label");
+      chosenBooks.push(name.replace(/^Choose /, "Remove "));
+      await book.click();
+    }
+    assert(await orbitBooks.first().isDisabled());
+    await page.getByText("Fine-tune with genres").click();
     await page.getByLabel("Fantasy", { exact: true }).check();
     await page.getByLabel("Classic", { exact: true }).check();
     await page.getByLabel("Nature", { exact: true }).check();
@@ -88,18 +99,17 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByLabel("Poetry", { exact: true }).uncheck();
     assert(await page.getByLabel("Romance", { exact: true }).isEnabled());
     await page
-      .getByRole("button", { name: "Save preferences", exact: true })
+      .getByRole("button", { name: "Show my orbit", exact: true })
       .click();
-    await page
-      .getByText(
-        "Your reading preferences are saved. Discover has fresh suggestions for you.",
-        { exact: true },
-      )
-      .waitFor();
+    await page.getByRole("link", { name: "See your picks", exact: true }).waitFor();
     await page.reload();
     await page
-      .getByRole("button", { name: "Save preferences", exact: true })
+      .getByRole("button", { name: "Update my orbit", exact: true })
       .waitFor();
+    for (const name of chosenBooks) {
+      await page.getByRole("button", { name, exact: true }).waitFor();
+    }
+    await page.getByText("Fine-tune with genres").click();
     assert(await page.getByLabel("Fantasy", { exact: true }).isChecked());
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
@@ -109,19 +119,6 @@ const { auditLayout } = require("./layout.cjs");
         fullPage: true,
       });
     }
-    await page
-      .getByRole("button", {
-        name: "Continue without favorite genres",
-        exact: true,
-      })
-      .click();
-    await page
-      .getByText(
-        "Preferences saved without favorite genres. Your reading activity will still shape suggestions.",
-        { exact: true },
-      )
-      .waitFor();
-    assert(!(await page.getByLabel("Fantasy", { exact: true }).isChecked()));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${base}/#home`);
     await page.locator(".home-reading-strip > summary").waitFor();
@@ -138,13 +135,7 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByLabel("Shelf name").fill("Favorites");
     await page.getByRole("button", { name: "Create shelf ↗" }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
-    await page
-      .locator(".main-nav")
-      .getByRole("button", { name: "Discover", exact: true })
-      .click();
-    await page
-      .getByRole("link", { name: "Open The Overstory", exact: true })
-      .click();
+    await page.goto(`${base}/#book/seed-overstory`);
     await page
       .getByRole("button", { name: /^(Add to my library|Update reading)/ })
       .click();
@@ -915,7 +906,7 @@ const { auditLayout } = require("./layout.cjs");
                 journal: "Notes worth keeping",
                 lists: "Collections worth sharing",
                 settings: "Account settings",
-                preferences: "Your reading preferences",
+                preferences: "Your reading orbit",
                 profile: "Your reading life",
               }[route];
         await page
@@ -1254,7 +1245,7 @@ const { auditLayout } = require("./layout.cjs");
         `${layoutChecks.length} route/viewport layout checks`,
         "curated lists: ordering, private access, publication, reload and deletion",
         "account password change, validation, session revocation, deletion/cancel and mobile layouts",
-        "private genre preferences, selection limit, reload, reset and mobile layouts",
+        "private Reading Orbit books and genres, selection limits, reload and mobile layouts",
         "catalogue filters, year validation, URL persistence, back navigation and mobile layouts",
         "short dialogs, inline validation, long content and reduced motion",
         "notification counts, private inbox, conversation deep link, reload and mark-all-read",
