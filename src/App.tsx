@@ -167,7 +167,8 @@ export function App() {
       post?: Post;
     } | null>(null),
     [busy, setBusy] = useState(false),
-    [filter, setFilter] = useState("all");
+    [filter, setFilter] = useState("all"),
+    [showBackToTop, setShowBackToTop] = useState(false);
   const [searchLanguage, setSearchLanguage] = useState("");
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState<{
@@ -183,6 +184,12 @@ export function App() {
   const [theme, setTheme] = useState<Theme>(() =>
     document.documentElement.dataset.theme === "light" ? "light" : "dark",
   );
+  useEffect(() => {
+    const update = () => setShowBackToTop(window.scrollY > 480);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("theme", theme);
@@ -1802,6 +1809,25 @@ export function App() {
           <SiteFooter />
         </main>
       </div>
+      <button
+        className={`back-to-top ${showBackToTop ? "is-visible" : ""}`}
+        type="button"
+        aria-label="Back to top"
+        aria-hidden={!showBackToTop}
+        title="Back to top"
+        tabIndex={showBackToTop ? 0 : -1}
+        onClick={() =>
+          window.scrollTo({
+            top: 0,
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "instant"
+              : "smooth",
+          })
+        }
+      >
+        <Icon name="arrowUp" />
+      </button>
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {(
           [

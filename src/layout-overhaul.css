@@ -54,6 +54,53 @@ body {
   outline-offset: 3px;
 }
 
+.back-to-top {
+  position: fixed;
+  z-index: 19;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 0 8px 22px #0003;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+}
+.back-to-top.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.back-to-top:hover {
+  background: var(--paper-deep);
+}
+.back-to-top svg {
+  width: 20px;
+  height: 20px;
+}
+@media (max-width: 860px) {
+  .back-to-top {
+    right: 16px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top {
+    transition: none;
+  }
+}
+
 .main-content {
   width: 100%;
   max-width: calc(var(--page-width) + 2 * var(--page-gutter));

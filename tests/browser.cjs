@@ -39,13 +39,13 @@ const { auditLayout } = require("./layout.cjs");
   const base = `http://127.0.0.1:${port}`,
     errors = [];
   try {
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 150; i++) {
       try {
         const r = await fetch(`${base}/api/health`);
         if (r.ok) break;
       } catch {}
       await new Promise((r) => setTimeout(r, 100));
-      if (i === 49) throw new Error(serverOutput);
+      if (i === 149) throw new Error(serverOutput);
     }
     browser = await chromium.launch({
       headless: true,
@@ -206,6 +206,9 @@ const { auditLayout } = require("./layout.cjs");
     await page
       .getByRole("link", { name: "Open A Book to Discover 1", exact: true })
       .waitFor();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.getByRole("button", { name: "Back to top" }).click();
+    await page.waitForFunction(() => window.scrollY < 5);
     await page.reload();
     await page
       .getByRole("link", { name: "Open The Overstory", exact: true })
