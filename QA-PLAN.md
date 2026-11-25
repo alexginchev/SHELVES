@@ -1,0 +1,18 @@
+# Shelves bug checks
+
+Run automated tests against their disposable test databases. Do not use a real reader account for destructive checks.
+
+| Area | Test | Expected result | Coverage |
+| --- | --- | --- | --- |
+| Search appearance | Open Home and focus the header search in dark and light themes at 1477, 390 and 320 px. | One continuous surface; the inner input has no separate fill, border, radius or shadow. | `npm run test:search:browser` |
+| Search behavior | Type, change the query before a slow response arrives, page results, clear, retry a failed request, use IME and keyboard selection. | Results stay in a panel on the current page; stale responses do not replace newer ones; keyboard selection opens the chosen book. | `npm run test:search:browser` |
+| API and cache | Search by title, author and ISBN; repeat a query; simulate timeouts and HTTP 429. | Ten books per page, saved results on cache hit, no key in browser requests, useful errors and safe cached fallback. | `npm test` |
+| Reading orbit | Choose three books, try a fourth, save, reload and edit genres. | Only three selections; saved choices persist and shape books, readers and feed without exposing private picks. | `npm run test:browser`; `npm test` |
+| Feed and social | Follow, mute and block a reader; switch For you, Following, Latest and Reviews; paginate while new posts arrive. | Each filter has the right posts; hidden readers stay hidden; no duplicates or missing posts across pages. | `npm test`; `npm run test:browser` |
+| Books and library | Open a book from search, choose an edition, save reading status, rating and page, then reload. | The selected edition and private progress persist without changing another edition. | `npm run test:browser`; `npm run test:editions:browser` |
+| Account boundaries | Sign in as two readers and try to read or edit the other's private notes, shelves and settings. | Private records cannot be accessed or changed across accounts. | `npm test`; `npm run test:browser` |
+| Responsive layout | Visit Home, Discover, book, shelves, reader and settings at 320, 390, 768, 1024 and 1440 px; open dialogs. | No horizontal overflow, clipped controls or overlapping content; mobile navigation clears the page. | `npm run test:browser` |
+| Supabase on two PCs | Configure both servers for the same Supabase project and `shelves` schema; create a disposable account on one, sign in on the other. | The account is available on both after a fresh sign-in. If not, compare each server's `/api/health` database type and project configuration without sharing credentials. | Manual |
+| Accessibility | Navigate search, dialogs and book cards by keyboard; enable reduced motion and zoom to 200%. | Focus is visible, Escape closes overlays, labels remain readable, and motion is optional. | Search and dialog checks automated; zoom review manual |
+
+Before release: run `npm run build`, `npm test`, `npm run test:search:browser`, and `npm run test:browser`. Run `npm run test:postgres` when the disposable Supabase test schema is configured. Recheck the touched screen in both themes and at a narrow viewport after any CSS change.

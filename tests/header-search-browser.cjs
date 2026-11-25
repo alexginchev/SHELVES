@@ -4,6 +4,27 @@ const {
 const { spawn } = require("node:child_process");
 const assert = require("node:assert/strict");
 const { auditLayout } = require("./layout.cjs");
+async function assertUnifiedSearch(page, label) {
+  const style = await page
+    .locator(".header-search-field input")
+    .evaluate((input) => {
+      const field = input.parentElement;
+      const inner = getComputedStyle(input);
+      const outer = getComputedStyle(field);
+      return {
+        inputBackground: inner.backgroundColor,
+        inputBorder: inner.borderTopWidth,
+        inputRadius: inner.borderTopLeftRadius,
+        inputShadow: inner.boxShadow,
+        fieldBackground: outer.backgroundColor,
+      };
+    });
+  assert.equal(style.inputBackground, "rgba(0, 0, 0, 0)", label);
+  assert.equal(style.inputBorder, "0px", label);
+  assert.equal(style.inputRadius, "0px", label);
+  assert.equal(style.inputShadow, "none", label);
+  assert.notEqual(style.fieldBackground, "rgba(0, 0, 0, 0)", label);
+}
 (async () => {
   const server = spawn(
     process.execPath,
@@ -77,6 +98,16 @@ const { auditLayout } = require("./layout.cjs");
       name: "Search books and authors",
     });
     await input.waitFor();
+    for (const theme of ["dark", "light"]) {
+      await page.evaluate((value) => {
+        document.documentElement.dataset.theme = value;
+      }, theme);
+      await input.focus();
+      await assertUnifiedSearch(page, `header search in ${theme} mode`);
+    }
+    await page.evaluate(() => {
+      document.documentElement.dataset.theme = "dark";
+    });
     await input.fill("slow");
     await page.getByText("Finding books…", { exact: true }).waitFor();
     await page.locator(".quick-search-panel .brand-loading img").waitFor();
@@ -92,6 +123,7 @@ const { auditLayout } = require("./layout.cjs");
       });
       await input.focus();
       await page.locator(".quick-search-result").first().waitFor();
+      await assertUnifiedSearch(page, `header search at ${width}px`);
       await auditLayout(page, "inline search " + width);
       await page.screenshot({
         path: `test-results/header-search-${width}.png`,
@@ -153,11 +185,15 @@ const { auditLayout } = require("./layout.cjs");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(base + "/#home");
     await page.locator(".mobile-brand img").waitFor();
-    const firstLogoUrl = await page.locator(".mobile-brand img").getAttribute("src");
+    const firstLogoUrl = await page
+      .locator(".mobile-brand img")
+      .getAttribute("src");
     assert.match(firstLogoUrl, /^\/branding\/shelves\.svg\?load=/);
     await page.reload();
     await page.locator(".mobile-brand img").waitFor();
-    const replayedLogoUrl = await page.locator(".mobile-brand img").getAttribute("src");
+    const replayedLogoUrl = await page
+      .locator(".mobile-brand img")
+      .getAttribute("src");
     assert.match(replayedLogoUrl, /^\/branding\/shelves\.svg\?load=/);
     assert.notEqual(replayedLogoUrl, firstLogoUrl);
     assert.deepEqual(errors, []);

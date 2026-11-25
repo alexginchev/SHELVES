@@ -13,6 +13,7 @@
     "test": "tsx --test tests/api.test.ts tests/migration.test.ts tests/home-feed.test.ts",
     "check": "tsc --noEmit",
     "test:browser": "npm run build && node tests/browser.cjs",
+    "test:search:browser": "npm run build && node tests/header-search-browser.cjs",
     "format": "prettier --write src server shared tests vite.config.ts",
     "supabase:check": "node --env-file=.env.supabase --import tsx server/check-supabase.ts",
     "test:postgres": "node --env-file=.env.supabase --import tsx --import ./tests/postgres-env.ts --test tests/api.test.ts tests/migration.test.ts tests/home-feed.test.ts",
