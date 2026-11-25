@@ -146,10 +146,10 @@ const { auditLayout } = require("./layout.cjs");
       await page.reload();
       await page.locator(".home-reading-strip > summary").click();
       await page.locator(".current-reading-book").waitFor();
-      const first = await page
-        .locator(".feed-column > :first-child")
-        .getAttribute("class");
-      assert(first.includes("home-reading-strip"));
+      assert.equal(
+        await page.locator(".feed-column > .home-reading-strip").count(),
+        1,
+      );
       await auditLayout(page, "signed-in home " + width);
       await page.screenshot({
         path: `test-results/signed-home-${width}.png`,
@@ -228,24 +228,31 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByText("Page 42 of 288", { exact: true }).waitFor();
 
     await page.goto(base + "/#preferences");
+    await page.getByRole("button", { name: /Choose Piranesi by/ }).click();
+    await page
+      .getByRole("button", { name: /Choose Braiding Sweetgrass by/ })
+      .click();
+    await page
+      .getByRole("button", { name: /Choose Remarkably Bright Creatures by/ })
+      .click();
+    await page.locator(".taste-genres > summary").click();
     await page.getByRole("checkbox", { name: "Fantasy", exact: true }).check();
-    await page.getByRole("button", { name: "Save preferences" }).click();
-    await page.getByText(/Your reading preferences are saved/).waitFor();
+    await page.getByRole("button", { name: "Show my orbit" }).click();
+    await page.getByText(/Your reading orbit is ready/).waitFor();
     await page.goto(base + "/#home");
+    await page.getByRole("region", { name: "Your reading orbit" }).waitFor();
     const personal = page.frameLocator(
       'iframe[title="Interactive featured book collection"]',
     );
-    await personal
-      .getByRole("heading", { name: "Piranesi", exact: true })
-      .waitFor();
+    await personal.locator(".book-description.active h3").first().waitFor();
     assert.equal(
       await personal
-        .getByRole("button", { name: "Braiding Sweetgrass", exact: true })
+        .getByRole("button", { name: "Piranesi", exact: true })
         .count(),
       0,
     );
-    await page.getByRole("link", { name: "View Piranesi" }).click();
-    await page.waitForURL("**/#book/seed-piranesi");
+    await page.locator(".featured-shelf-footer a.primary-btn").click();
+    await page.waitForURL("**/#book/*");
 
     const guest = await browser.newPage({
       viewport: { width: 651, height: 603 },

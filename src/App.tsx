@@ -809,6 +809,84 @@ export function App() {
                       />
                     </details>
                   ) : null}
+                  {data.user &&
+                  data.favoriteBookCount === 3 &&
+                  (data.recommendations.length > 0 ||
+                    data.readers.some(
+                      (reader) =>
+                        reader.reason &&
+                        reader.reason !== "Explore their reading corner",
+                    )) ? (
+                    <section
+                      className="home-orbit"
+                      aria-label="Your reading orbit"
+                    >
+                      <div className="home-orbit-heading">
+                        <div>
+                          <span className="section-kicker">
+                            SHAPED BY YOUR THREE BOOKS
+                          </span>
+                          <h2>In your orbit</h2>
+                        </div>
+                        <a
+                          href="#preferences"
+                          aria-label="Edit your reading orbit"
+                          title="Edit your reading orbit"
+                        >
+                          <Icon name="journal" />
+                        </a>
+                      </div>
+                      <div className="home-orbit-grid">
+                        {data.recommendations[0] ? (
+                          <a
+                            className="home-orbit-book"
+                            href={`#book/${data.recommendations[0].id}`}
+                          >
+                            <Cover book={data.recommendations[0]} />
+                            <span>
+                              <small>YOUR NEXT READ</small>
+                              <strong>{data.recommendations[0].title}</strong>
+                              <em>{data.recommendations[0].reason}</em>
+                            </span>
+                            <Icon name="arrowUpRight" />
+                          </a>
+                        ) : null}
+                        {data.readers
+                          .filter(
+                            (reader) =>
+                              reader.reason &&
+                              reader.reason !== "Explore their reading corner",
+                          )
+                          .slice(0, 2)
+                          .map((reader) => (
+                            <a
+                              className="home-orbit-reader"
+                              href={`#reader/${reader.id}`}
+                              key={reader.id}
+                            >
+                              <Avatar
+                                name={reader.displayName}
+                                src={
+                                  reader.avatarVersion
+                                    ? `/api/readers/${reader.id}/images/avatar?v=${reader.avatarVersion}`
+                                    : undefined
+                                }
+                              />
+                              <span>
+                                <strong>
+                                  <ReaderName
+                                    name={reader.displayName}
+                                    verified={reader.isAdmin}
+                                  />
+                                </strong>
+                                <small>{reader.reason}</small>
+                              </span>
+                              <Icon name="arrowUpRight" />
+                            </a>
+                          ))}
+                      </div>
+                    </section>
+                  ) : null}
                   <section className="compose-card">
                     <div className="compose-top">
                       <Avatar

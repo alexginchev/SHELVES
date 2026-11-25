@@ -79,6 +79,19 @@ const { auditLayout } = require("./layout.cjs");
     await page
       .getByRole("link", { name: "Reading preferences", exact: true })
       .click();
+    await page.getByRole("button", { name: /Choose Piranesi by/ }).click();
+    await page
+      .getByRole("button", { name: /Choose Braiding Sweetgrass by/ })
+      .click();
+    await page
+      .getByRole("button", { name: /Choose Remarkably Bright Creatures by/ })
+      .click();
+    assert(
+      await page
+        .getByRole("button", { name: /Choose Small Things Like These by/ })
+        .isDisabled(),
+    );
+    await page.locator(".taste-genres > summary").click();
     await page.getByLabel("Fantasy", { exact: true }).check();
     await page.getByLabel("Classic", { exact: true }).check();
     await page.getByLabel("Nature", { exact: true }).check();
@@ -88,18 +101,19 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByLabel("Poetry", { exact: true }).uncheck();
     assert(await page.getByLabel("Romance", { exact: true }).isEnabled());
     await page
-      .getByRole("button", { name: "Save preferences", exact: true })
+      .getByRole("button", { name: "Show my orbit", exact: true })
       .click();
     await page
       .getByText(
-        "Your reading preferences are saved. Discover has fresh suggestions for you.",
-        { exact: true },
+        /Your reading orbit is ready\. Picks, readers, and posts now follow your taste\./,
       )
       .waitFor();
     await page.reload();
     await page
-      .getByRole("button", { name: "Save preferences", exact: true })
+      .getByRole("button", { name: "Update my orbit", exact: true })
       .waitFor();
+    assert.equal(await page.locator(".taste-slot.filled").count(), 3);
+    await page.locator(".taste-genres > summary").click();
     assert(await page.getByLabel("Fantasy", { exact: true }).isChecked());
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
@@ -109,21 +123,9 @@ const { auditLayout } = require("./layout.cjs");
         fullPage: true,
       });
     }
-    await page
-      .getByRole("button", {
-        name: "Continue without favorite genres",
-        exact: true,
-      })
-      .click();
-    await page
-      .getByText(
-        "Preferences saved without favorite genres. Your reading activity will still shape suggestions.",
-        { exact: true },
-      )
-      .waitFor();
-    assert(!(await page.getByLabel("Fantasy", { exact: true }).isChecked()));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${base}/#home`);
+    await page.getByRole("region", { name: "Your reading orbit" }).waitFor();
     await page.locator(".home-reading-strip > summary").waitFor();
     assert.equal(await page.locator(".welcome-card").count(), 0);
     assert.equal(
@@ -142,6 +144,7 @@ const { auditLayout } = require("./layout.cjs");
       .locator(".main-nav")
       .getByRole("button", { name: "Discover", exact: true })
       .click();
+    await page.locator(".discover-search input").fill("The Overstory");
     await page
       .getByRole("link", { name: "Open The Overstory", exact: true })
       .click();
@@ -915,7 +918,7 @@ const { auditLayout } = require("./layout.cjs");
                 journal: "Notes worth keeping",
                 lists: "Collections worth sharing",
                 settings: "Account settings",
-                preferences: "Your reading preferences",
+                preferences: "Your reading orbit",
                 profile: "Your reading life",
               }[route];
         await page
@@ -1025,9 +1028,7 @@ const { auditLayout } = require("./layout.cjs");
     await first.setOffline(false);
     await page.keyboard.press("Escape");
     await page.goto(`${base}/#shelves`);
-    await page
-      .getByRole("button", { name: "New shelf", exact: true })
-      .click();
+    await page.getByRole("button", { name: "New shelf", exact: true }).click();
     await auditLayout(page, "new shelf dialog at 320x480");
     await page
       .getByLabel("Shelf name")
@@ -1254,7 +1255,7 @@ const { auditLayout } = require("./layout.cjs");
         `${layoutChecks.length} route/viewport layout checks`,
         "curated lists: ordering, private access, publication, reload and deletion",
         "account password change, validation, session revocation, deletion/cancel and mobile layouts",
-        "private genre preferences, selection limit, reload, reset and mobile layouts",
+        "private three-book orbit, genre limit, reload, home matches and mobile layouts",
         "catalogue filters, year validation, URL persistence, back navigation and mobile layouts",
         "short dialogs, inline validation, long content and reduced motion",
         "notification counts, private inbox, conversation deep link, reload and mark-all-read",

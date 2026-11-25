@@ -3616,6 +3616,20 @@ test("book search prioritizes novels while respecting explicit companion searche
       )[0].title,
       title,
     );
+    assert.equal(
+      rankSearch(
+        [
+          {
+            ...books[5].book,
+            title: "Crescent City Two Books Set by Test Author",
+          },
+          { ...books[5].book, title: "Kingdom of Ash" },
+        ],
+        "Test Author",
+      )[0].title,
+      "Kingdom of Ash",
+      "author searches should favor individual books over bundle listings",
+    );
     for (const v of books.slice(0, 4))
       assert.equal(recommendationQuality(v.book, v.metadata), false);
     assert.equal(recommendationQuality(books[5].book, books[5].metadata), true);

@@ -25,10 +25,11 @@ function searchPenalty(title: string, query: string) {
   )
     ? 80
     : 0;
-  const collection = /\b(?:box(?:ed)? set|bundle|collection)\b/i;
+  const collection =
+    /\b(?:box(?:ed)? set|bundle|collection|books? set|books? pack)\b/i;
   return (
     derivativePenalty +
-    (collection.test(title) && !collection.test(query) ? 12 : 0)
+    (collection.test(title) && !collection.test(query) ? 55 : 0)
   );
 }
 export function recommendationQuality(

@@ -17,6 +17,125 @@
   --font-interface: var(--sans);
 }
 
+.home-orbit {
+  margin: 0 0 24px;
+  padding: clamp(18px, 2.4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sage-pale) 52%, var(--white));
+}
+.home-orbit-heading,
+.home-orbit-book,
+.home-orbit-reader {
+  display: flex;
+  align-items: center;
+}
+.home-orbit-heading {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.home-orbit-heading h2 {
+  margin: 4px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.5vw, 29px);
+}
+.home-orbit-heading a {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+}
+.home-orbit-heading a svg {
+  width: 17px;
+  height: 17px;
+}
+.home-orbit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 10px;
+}
+.home-orbit-book,
+.home-orbit-reader {
+  min-width: 0;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease;
+  border: 1px solid var(--line);
+}
+.home-orbit-book:hover,
+.home-orbit-reader:hover {
+  transform: translateY(-2px);
+  border-color: var(--sage);
+}
+.home-orbit-book .real-cover,
+.home-orbit-book .paper-cover {
+  width: 48px;
+  height: 68px;
+  flex: none;
+  object-fit: cover;
+}
+.home-orbit-book span,
+.home-orbit-reader span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.home-orbit-book strong,
+.home-orbit-reader strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.home-orbit-book small {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+.home-orbit-book em,
+.home-orbit-reader small {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.home-orbit-reader .avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+}
+.home-orbit-book > svg,
+.home-orbit-reader > svg {
+  width: 15px;
+  height: 15px;
+  margin-left: auto;
+  flex: none;
+}
+@media (max-width: 540px) {
+  .home-orbit-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-orbit-book {
+    grid-column: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-orbit-book,
+  .home-orbit-reader {
+    transition: none;
+  }
+}
+
 @layer components {
   .visual-icon-action {
     @apply inline-flex shrink-0 items-center justify-center rounded-full border border-solid border-line bg-surface text-ink no-underline;
