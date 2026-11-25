@@ -26,7 +26,7 @@ const { auditLayout } = require("./layout.cjs");
         DATABASE_PATH: join(dir, "browser.db"),
         DATABASE_ENGINE: usePostgres ? "postgres" : "sqlite",
         DATABASE_SCHEMA: usePostgres ? schema : undefined,
-        NODE_ENV: "development",
+        NODE_ENV: "test",
       },
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
@@ -57,6 +57,33 @@ const { auditLayout } = require("./layout.cjs");
         viewport: { width: 1440, height: 1000 },
       }),
       page = await first.newPage();
+    await first.route(
+      (url) =>
+        url.pathname === "/api/books/search" &&
+        url.searchParams.get("q")?.startsWith("subject:"),
+      (route) => {
+        const offset = Number(
+          new URL(route.request().url()).searchParams.get("startIndex") || 0,
+        );
+        return route.fulfill({
+          json: {
+            items: Array.from({ length: 10 }, (_, index) => ({
+              id: `discovery-${offset + index}`,
+              title: `A Book to Discover ${offset + index + 1}`,
+              author: `Reader ${offset + index + 1}`,
+              genre: "Fiction",
+              pages: 240,
+              description: "A story to discover.",
+              cover: null,
+              color: "sage",
+              year: 2020,
+            })),
+            source: "Google Books",
+            warning: null,
+          },
+        });
+      },
+    );
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base);
     await page
@@ -165,6 +192,20 @@ const { auditLayout } = require("./layout.cjs");
       .getByRole("button", { name: "My shelves", exact: true })
       .click();
     assert.equal(await page.locator(".feed-column .book-tile").count(), 1);
+    await page
+      .getByRole("region", { name: "Discover more books" })
+      .getByRole("button", { name: "More books" })
+      .click();
+    await page
+      .getByRole("link", { name: "Open A Book to Discover 11", exact: true })
+      .waitFor();
+    await page
+      .getByRole("region", { name: "Discover more books" })
+      .getByRole("button", { name: "Previous" })
+      .click();
+    await page
+      .getByRole("link", { name: "Open A Book to Discover 1", exact: true })
+      .waitFor();
     await page.reload();
     await page
       .getByRole("link", { name: "Open The Overstory", exact: true })
@@ -181,6 +222,22 @@ const { auditLayout } = require("./layout.cjs");
     await page.getByLabel("Reading status").selectOption("Finished");
     await page.getByRole("button", { name: "Save reading update" }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.goto(`${base}/#shelves`);
+    await page.getByRole("region", { name: "Finished shelf" }).waitFor();
+    assert.equal(
+      await page
+        .getByRole("region", { name: "Finished shelf" })
+        .getByRole("img", { name: "5 out of 5 stars" })
+        .count(),
+      1,
+    );
+    assert(
+      (await page
+        .locator(".library-shelf-ledge")
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().width)) <= 165,
+      "A single book should have a short ledge",
+    );
     await page
       .locator(".main-nav")
       .getByRole("button", { name: "Reading journal", exact: true })
@@ -191,9 +248,11 @@ const { auditLayout } = require("./layout.cjs");
     await page
       .getByRole("button", { name: "Open profile", exact: true })
       .click();
+    assert.equal(await page.locator(".profile-management").count(), 0);
+    await page.getByRole("link", { name: "Open profile settings" }).click();
     await page
-      .getByText("Edit profile and reading goal", { exact: true })
-      .click();
+      .getByRole("heading", { name: "Profile & reading goal" })
+      .waitFor();
     await page.getByLabel(/Reading goal for/).fill("12");
     await page.getByRole("button", { name: "Save profile" }).click();
     await page.getByText("Your profile and goal are saved.").waitFor();
@@ -214,6 +273,8 @@ const { auditLayout } = require("./layout.cjs");
       mimeType: "image/png",
       buffer: uploadImage,
     });
+    await page.getByText("Profile image updated.", { exact: true }).waitFor();
+    await page.goto(base + "/#profile");
     await page.locator(".profile-banner img").waitFor();
     await page.locator(".profile-portrait img").waitFor();
     const beforeProgress = await (
@@ -226,7 +287,9 @@ const { auditLayout } = require("./layout.cjs");
       headers: { "X-Shelves-Request": "1" },
       data: { ...originalReading, status: "Currently reading", page: 120 },
     });
+    await page.goto(base + "/#home");
     await page.reload();
+    await page.locator(".home-reading-strip > summary").click();
     await page
       .locator(".current-reading")
       .getByRole("button", { name: "Update progress", exact: true })
@@ -243,6 +306,7 @@ const { auditLayout } = require("./layout.cjs");
       .getByRole("button", { name: "Save progress", exact: true })
       .click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.goto(base + "/#profile");
     await page
       .locator(".profile-wall .post-copy")
       .filter({ hasText: "A new chapter today." })
@@ -449,7 +513,9 @@ const { auditLayout } = require("./layout.cjs");
       .locator(".mobile-nav")
       .getByRole("button", { name: "You", exact: true })
       .click();
+    await page.getByRole("link", { name: "Open profile settings" }).click();
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page.goto(`${base}/#profile`);
     await page.getByRole("button", { name: "Join Shelves" }).waitFor();
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page

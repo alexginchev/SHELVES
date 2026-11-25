@@ -50,6 +50,7 @@ import { AccountSettings } from "./AccountSettings";
 import { ReadingPreferences } from "./ReadingPreferences";
 import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
+import { ExploreShelf, LibraryShelves, LibraryShelf } from "./LibraryShelves";
 const views = {
   terms: "Terms of use",
   cookies: "Cookies",
@@ -667,16 +668,37 @@ export function App() {
                 <AdminReports user={data.user} />
               ) : null}
               {!loading && view === "settings" ? (
-                <AccountSettings
-                  user={data.user}
-                  onAuth={() => setAuth(true)}
-                  onEnded={async () => {
-                    generation.current++;
-                    setData(empty);
-                    setShelf("");
-                    await refresh();
-                  }}
-                />
+                <div className="settings-workspace">
+                  {data.user ? (
+                    <>
+                      <section className="view-panel settings-profile">
+                        <span className="section-kicker">MAKE IT YOURS</span>
+                        <h2>Profile & reading goal</h2>
+                        <ProfileForm user={data.user} onSaved={saved} />
+                      </section>
+                      <ProfileManagement user={data.user} onSaved={saved} />
+                    </>
+                  ) : null}
+                  <AccountSettings
+                    user={data.user}
+                    onAuth={() => setAuth(true)}
+                    onEnded={async () => {
+                      generation.current++;
+                      setData(empty);
+                      setShelf("");
+                      await refresh();
+                    }}
+                  />
+                  {data.user ? (
+                    <button
+                      className="plain-link settings-sign-out"
+                      disabled={busy}
+                      onClick={() => void signOut()}
+                    >
+                      Sign out
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
               {!loading && view === "preferences" ? (
                 <ReadingPreferences
@@ -1168,17 +1190,20 @@ export function App() {
                       />
                     ))}
                   </div>
+                  {query.trim().length < 2 ? (
+                    <ExploreShelf
+                      genre={data.library[0]?.book.genre || "fiction"}
+                      savedIds={data.library.map((record) => record.bookId)}
+                      fallback={data.recommendations.slice(0, 8)}
+                      onBook={openBookPage}
+                    />
+                  ) : null}
                   {!searching &&
                   !searchError &&
-                  !(query.trim().length >= 2
-                    ? search?.items.length
-                    : data.recommendations.length) ? (
+                  query.trim().length >= 2 &&
+                  !search?.items.length ? (
                     <div className="empty-state">
-                      <p>
-                        {query.trim().length >= 2
-                          ? "No matches. Try another title or author."
-                          : "No strong matches in the current catalog. Try a book search or update your reading preferences."}
-                      </p>
+                      <p>No matches. Try another title or author.</p>
                     </div>
                   ) : null}
                 </section>
@@ -1314,16 +1339,13 @@ export function App() {
                         {filteredLibrary.length}{" "}
                         {filteredLibrary.length === 1 ? "book" : "books"}
                       </p>
-                      <div className="book-grid collection-books">
-                        {filteredLibrary.map((r) => (
-                          <BookCard
-                            key={r.bookId}
-                            book={r.book}
-                            reason={`${r.status}${r.rating ? ` · ${r.rating}/5 stars` : ""}${r.page ? ` · page ${r.page}` : ""}`}
-                            onOpen={openBookPage}
-                          />
-                        ))}
-                      </div>
+                      <LibraryShelves
+                        records={filteredLibrary}
+                        selected={shelf}
+                        customName={selectedShelf?.name}
+                        onBook={openBookPage}
+                        onStatus={(status) => navigate("shelves", status)}
+                      />
                       {!filteredLibrary.length ? (
                         <div className="empty-state">
                           <p>
@@ -1338,6 +1360,14 @@ export function App() {
                             Discover books ↗
                           </button>
                         </div>
+                      ) : null}
+                      {!shelf && !libraryQuery ? (
+                        <ExploreShelf
+                          genre={data.library[0]?.book.genre || "fiction"}
+                          savedIds={data.library.map((record) => record.bookId)}
+                          fallback={data.recommendations.slice(0, 8)}
+                          onBook={openBookPage}
+                        />
                       ) : null}
                     </>
                   ) : (
@@ -1555,72 +1585,69 @@ export function App() {
                       reader={data.user}
                       followers={data.stats?.followers || 0}
                       following={data.stats?.following || 0}
+                      actions={
+                        <a
+                          className="profile-settings-link"
+                          href="#settings"
+                          aria-label="Open profile settings"
+                          title="Profile settings"
+                        >
+                          <Icon name="settings" />
+                        </a>
+                      }
                     />
-                    <div className="profile-workspace grid min-w-0 gap-6 min-[1200px]:grid-cols-[minmax(0,1fr)_320px]">
-                      <div className="grid min-w-0 gap-6">
-                        <section className="view-panel profile-tools">
-                          <div className="account-actions">
-                            <button className="primary-btn" onClick={startPost}>
-                              Write a post
-                            </button>
-                            <a
-                              className="outline-btn"
-                              href={`#reader/${data.user.id}`}
-                            >
-                              View my public profile ↗
-                            </a>
-                            <button
-                              className="plain-link"
-                              disabled={busy}
-                              onClick={() => void signOut()}
-                            >
-                              Sign out
-                            </button>
-                          </div>
-                          <p>
-                            {finished} of {goal} books finished this year ·{" "}
-                            {data.stats?.pages || 0} pages tracked
-                          </p>
-                          <progress
-                            aria-label="Yearly reading goal"
-                            value={finished}
-                            max={goal}
+                    <div className="profile-workspace">
+                      <section
+                        className="profile-public-shelves"
+                        aria-label="My shelves"
+                      >
+                        <div className="library-shelf-heading">
+                          <h2>My shelves</h2>
+                          <a href="#shelves" className="plain-link">
+                            See library <Icon name="arrowUpRight" />
+                          </a>
+                        </div>
+                        {data.library.length ? (
+                          <LibraryShelf
+                            title="Books on my shelves"
+                            records={data.library.slice(0, 8)}
+                            onBook={openBookPage}
                           />
-                          <details className="profile-edit">
-                            <summary>Edit profile and reading goal</summary>
-                            <ProfileForm user={data.user} onSaved={saved} />
-                          </details>
-                        </section>
-                        <CurrentlyReading
-                          records={data.library}
-                          onSaved={saved}
-                        />
-                        <ReaderPage
-                          key={data.user.id}
-                          wallOnly
-                          id={data.user.id}
-                          user={data.user}
-                          revision={revision}
-                          busy={busy}
-                          onFollow={() => {}}
-                          onLike={(p) =>
-                            void mutate(
-                              () =>
-                                api(`/posts/${p.id}/like`, {
-                                  method: p.liked ? "DELETE" : "PUT",
-                                }),
-                              "Appreciation updated.",
-                            )
-                          }
-                          onComment={(p) =>
-                            setComposer({ kind: "comment", post: p })
-                          }
-                          onDelete={(p) =>
-                            setComposer({ kind: "delete", post: p })
-                          }
-                        />
+                        ) : (
+                          <a className="profile-empty-shelf" href="#discover">
+                            Find a book for your shelf <Icon name="arrow" />
+                          </a>
+                        )}
+                      </section>
+                      <div className="profile-post-heading">
+                        <button className="primary-btn" onClick={startPost}>
+                          <Icon name="plus" /> Write a post
+                        </button>
                       </div>
-                      <ProfileManagement user={data.user} onSaved={saved} />
+                      <ReaderPage
+                        key={data.user.id}
+                        wallOnly
+                        id={data.user.id}
+                        user={data.user}
+                        revision={revision}
+                        busy={busy}
+                        onFollow={() => {}}
+                        onLike={(p) =>
+                          void mutate(
+                            () =>
+                              api(`/posts/${p.id}/like`, {
+                                method: p.liked ? "DELETE" : "PUT",
+                              }),
+                            "Appreciation updated.",
+                          )
+                        }
+                        onComment={(p) =>
+                          setComposer({ kind: "comment", post: p })
+                        }
+                        onDelete={(p) =>
+                          setComposer({ kind: "delete", post: p })
+                        }
+                      />
                     </div>
                   </div>
                 ) : (

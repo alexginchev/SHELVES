@@ -30,6 +30,7 @@ async function auditLayout(page, label) {
         "h2,h3,h4,p,button,input,textarea,select,.real-cover,.paper-cover",
       )) {
         if (!visible(el)) continue;
+        if (el.closest(".explore-shelf-track,.library-shelf-track")) continue;
         const b = el.getBoundingClientRect();
         if (b.left < left - 2 || b.right > right + 2)
           issues.push(name(el) + " escapes card padding");

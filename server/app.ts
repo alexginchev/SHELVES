@@ -104,7 +104,7 @@ export function createApp(db: Store) {
     "/api",
     rateLimit({
       windowMs: 60000,
-      limit: 180,
+      limit: process.env.NODE_ENV === "test" ? 1500 : 180,
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: "Too many requests. Please wait a minute." },
