@@ -2914,6 +2914,29 @@ test("recommendations require thematic relevance and credible imported editions"
       }),
       null,
     );
+    for (const title of [
+      "The Hidden City eBook Bundle",
+      "The Hidden City Boxed Set",
+      "The Hidden City Omnibus",
+      "The Hidden City: Books 1-3",
+      "The Hidden City 3-in-1",
+      "The Hidden City Illustrated Edition",
+      "The Hidden City Annotated Edition",
+      "The Hidden City Anthology",
+    ])
+      assert.equal(
+        recommendationQuality({ ...novel.book, title }, novel.metadata),
+        false,
+        `${title} must stay out of recommendations`,
+      );
+    assert.equal(
+      recommendationQuality(
+        { ...novel.book, title: "The Hidden City" },
+        { ...novel.metadata, format: "ebook" },
+      ),
+      true,
+      "An individual ebook is still a readable edition",
+    );
   } finally {
     globalThis.fetch = originalFetch;
     if (oldKey === undefined) delete process.env.GOOGLE_BOOKS_API_KEY;

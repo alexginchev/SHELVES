@@ -1,5 +1,5 @@
 import { readingGenres } from "../shared/genres";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Book,
   ReadingPreferences as Preferences,
@@ -9,6 +9,63 @@ import { api, json } from "./api";
 import { Cover, ErrorMessage, Icon } from "./components";
 
 type SearchResult = { items: Book[] };
+
+function OrbitScene({ books, notice }: { books: Book[]; notice: string }) {
+  const scene = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const element = scene.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting && !document.hidden),
+      { threshold: 0.1 },
+    );
+    const onVisibility = () =>
+      setVisible(
+        !document.hidden && element.getBoundingClientRect().bottom > 0,
+      );
+    observer.observe(element);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+  return (
+    <section
+      ref={scene}
+      className={`taste-orbit-scene ${visible ? "" : "is-paused"}`}
+      aria-label="Your completed reading orbit"
+    >
+      <div className="taste-orbit-motion" aria-hidden="true">
+        <div className="taste-orbit-track" />
+        {books.map((book, index) => (
+          <div
+            className={`taste-orbit-body taste-orbit-body-${index}`}
+            key={book.id}
+            style={{ animationDelay: `${index * -4}s` }}
+          >
+            <Cover book={book} />
+          </div>
+        ))}
+        <div className="taste-orbit-core">
+          <span>YOUR READING ORBIT</span>
+          <strong>
+            Three stories.
+            <br />A world of next reads.
+          </strong>
+        </div>
+      </div>
+      <div className="taste-orbit-caption">
+        <p role="status">{notice}</p>
+        <span>{books.map((book) => book.title).join(" · ")}</span>
+        <a href="#discover" className="outline-btn">
+          Explore your picks <Icon name="arrow" />
+        </a>
+      </div>
+    </section>
+  );
+}
 
 export function ReadingPreferences({
   user,
@@ -33,6 +90,20 @@ export function ReadingPreferences({
   const [results, setResults] = useState<Book[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const orbitAnchor = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const frame = requestAnimationFrame(() =>
+      orbitAnchor.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "center",
+      }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [notice]);
 
   useEffect(() => {
     setLoaded(false);
@@ -144,6 +215,11 @@ export function ReadingPreferences({
         </div>
       </div>
       <ErrorMessage message={error} />
+      <div ref={orbitAnchor}>
+        {notice && chosen.length === 3 ? (
+          <OrbitScene books={chosen} notice={notice} />
+        ) : null}
+      </div>
       {!user ? (
         <div className="taste-guest">
           <div className="taste-guest-covers" aria-hidden="true">
@@ -341,11 +417,6 @@ export function ReadingPreferences({
               )}
             </div>
           </div>
-          {notice && (
-            <p role="status" className="taste-saved">
-              {notice} <a href="#discover">See your picks</a>
-            </p>
-          )}
         </>
       )}
     </section>

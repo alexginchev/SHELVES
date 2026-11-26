@@ -140,6 +140,36 @@ const { auditLayout } = require("./layout.cjs");
         /Your reading orbit is ready\. Picks, readers, and posts now follow your taste\./,
       )
       .waitFor();
+    const orbitScene = page.getByRole("region", {
+      name: "Your completed reading orbit",
+    });
+    await orbitScene.waitFor();
+    assert.equal(await orbitScene.locator(".taste-orbit-body").count(), 3);
+    assert.equal(
+      await orbitScene
+        .locator(".taste-orbit-body")
+        .first()
+        .evaluate((node) => getComputedStyle(node).animationName),
+      "taste-book-orbit",
+    );
+    await orbitScene.screenshot({
+      path: "test-results/orbit-complete-desktop.png",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await auditLayout(page, "completed orbit 390px");
+    await orbitScene.screenshot({
+      path: "test-results/orbit-complete-mobile.png",
+    });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    assert.equal(
+      await orbitScene
+        .locator(".taste-orbit-body")
+        .first()
+        .evaluate((node) => getComputedStyle(node).animationName),
+      "none",
+    );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.reload();
     await page
       .getByRole("button", { name: "Update my orbit", exact: true })

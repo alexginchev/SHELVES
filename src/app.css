@@ -1950,6 +1950,184 @@ body:has(dialog[open]) {
   padding: clamp(24px, 4vw, 52px);
   overflow: hidden;
 }
+.taste-orbit-scene {
+  margin: 0 0 32px;
+  padding: 20px 20px 26px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+.taste-orbit-motion {
+  --orbit-x: clamp(100px, 27vw, 220px);
+  --orbit-y: 110px;
+  position: relative;
+  height: 350px;
+  max-width: 620px;
+  margin: auto;
+  isolation: isolate;
+}
+.taste-orbit-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--orbit-x) * 2);
+  height: calc(var(--orbit-y) * 2);
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 42%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.taste-orbit-track::after {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 18%, transparent);
+  border-radius: 50%;
+}
+.taste-orbit-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  width: 176px;
+  height: 112px;
+  border-radius: 56px;
+  background: var(--white);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+.taste-orbit-core span {
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.taste-orbit-core strong {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.12;
+}
+.taste-orbit-body {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 78px;
+  height: 116px;
+  animation: taste-book-orbit 12s linear infinite;
+}
+.taste-orbit-body :is(.real-cover, .paper-cover, .large-cover) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 12px 20px #0005;
+}
+.taste-orbit-scene.is-paused .taste-orbit-body {
+  animation-play-state: paused;
+}
+.taste-orbit-caption {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.taste-orbit-caption p {
+  max-width: 50ch;
+  margin: 0;
+  font-size: 0.93rem;
+}
+.taste-orbit-caption span {
+  max-width: 100%;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.taste-orbit-caption .outline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.taste-orbit-caption .outline-btn svg {
+  width: 16px;
+  height: 16px;
+}
+@keyframes taste-book-orbit {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, calc(-1 * var(--orbit-y)))
+      scale(0.8);
+  }
+  12.5% {
+    transform: translate(-50%, -50%)
+      translate(calc(var(--orbit-x) * 0.707), calc(var(--orbit-y) * -0.707))
+      scale(0.9);
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(var(--orbit-x), 0) scale(1);
+  }
+  37.5% {
+    transform: translate(-50%, -50%)
+      translate(calc(var(--orbit-x) * 0.707), calc(var(--orbit-y) * 0.707))
+      scale(1.08);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(0, var(--orbit-y)) scale(1.13);
+  }
+  62.5% {
+    transform: translate(-50%, -50%)
+      translate(calc(var(--orbit-x) * -0.707), calc(var(--orbit-y) * 0.707))
+      scale(1.08);
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(calc(-1 * var(--orbit-x)), 0)
+      scale(1);
+  }
+  87.5% {
+    transform: translate(-50%, -50%)
+      translate(calc(var(--orbit-x) * -0.707), calc(var(--orbit-y) * -0.707))
+      scale(0.9);
+  }
+}
+@media (max-width: 540px) {
+  .taste-orbit-motion {
+    --orbit-x: 100px;
+    --orbit-y: 108px;
+    height: 340px;
+  }
+  .taste-orbit-body {
+    width: 62px;
+    height: 92px;
+  }
+  .taste-orbit-core {
+    width: 130px;
+    height: 86px;
+  }
+  .taste-orbit-core strong {
+    font-size: 0.9rem;
+  }
+  .taste-orbit-core span {
+    font-size: 0.47rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .taste-orbit-body {
+    animation: none;
+  }
+  .taste-orbit-body-0 {
+    transform: translate(-50%, -50%) translate(-100px, -56px);
+  }
+  .taste-orbit-body-1 {
+    transform: translate(-50%, -50%) translate(100px, -56px);
+  }
+  .taste-orbit-body-2 {
+    transform: translate(-50%, -50%) translate(0, 88px);
+  }
+}
 .taste-guest {
   display: flex;
   align-items: center;

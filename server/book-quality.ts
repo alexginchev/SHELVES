@@ -15,6 +15,8 @@ const derivativeKinds = [
   /\b(?:workbook|blank journal|blank notebook)\b/i,
   /\b(?:conference proceedings|doctoral thesis|dissertation|technical report|working paper)\b/i,
   /\b(?:teacher(?:'s)? edition|lesson plans?|exam prep|test prep|textbook|handbook|dictionary|encyclopedia|activity book|logbook|planner)\b/i,
+  /\b(?:box(?:ed)? set|bundle|omnibus|anthology|complete (?:series|works)|collected works|illustrated edition|annotated edition|abridged edition|large print edition)\b/i,
+  /\b(?:\d+\s*(?:-in-1|books? in (?:one|1))|books?\s+\d+\s*(?:[-–]|to|and|&|,)\s*\d+)\b/i,
 ];
 const derivative = {
   test: (title: string) =>
@@ -75,7 +77,7 @@ export function leisureNovel(
   if (!recommendationQuality(book, metadata)) return false;
   const categories = metadata?.tags.join(" ") || "";
   if (
-    /\b(?:nonfiction|non-fiction|study aids|literary criticism|education|reference|business|self-help|computers|medical|law)\b/i.test(
+    /\b(?:nonfiction|non-fiction|study aids|literary criticism|education|reference|business|self-help|computers|medical|law|anthologies)\b/i.test(
       categories,
     )
   )
