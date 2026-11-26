@@ -172,7 +172,9 @@ test(
         .prepare("INSERT INTO list_books VALUES (?,?,?)")
         .run(listId, "seed-garden", 0);
       source
-        .prepare("INSERT INTO reading_preferences VALUES (?,?)")
+        .prepare(
+          "INSERT INTO reading_preferences (user_id,genres) VALUES (?,?)",
+        )
         .run(userId, JSON.stringify(["Fantasy"]));
       source
         .prepare("INSERT INTO list_comments VALUES (?,?,?,?,?)")

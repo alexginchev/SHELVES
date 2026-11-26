@@ -2017,6 +2017,33 @@ test("recommendations use public social signals, respect privacy and diversify e
     assert.equal(social[0].id, "social-target");
     assert.equal(social[0].reason, "Rated highly by a reader you follow");
     assert(!social.some((b) => b.id === "social-edition"));
+    await review("rec-viewer-overlap", "rec-viewer", "seed-garden", 5);
+    await review("rec-peer-overlap", "rec-other", "seed-garden", 5);
+    await review("rec-peer-pick", "rec-other", "social-second", 5);
+    const peerPicks = await recommendations(db, "rec-viewer");
+    assert.equal(
+      peerPicks.find((book) => book.id === "social-second")?.reason,
+      "Loved by a reader with your taste",
+    );
+    assert(!peerPicks.some((book) => book.id === "seed-garden"));
+    await db.run(
+      "INSERT INTO reader_controls (user_id,target_id,kind) VALUES (?,?,?)",
+      "rec-viewer",
+      "rec-other",
+      "mute",
+    );
+    assert(
+      !(await recommendations(db, "rec-viewer")).some(
+        (book) => book.reason === "Loved by a reader with your taste",
+      ),
+    );
+    await db.run("DELETE FROM reader_controls WHERE user_id=?", "rec-viewer");
+    await db.run(
+      "DELETE FROM posts WHERE id IN (?,?,?)",
+      "rec-viewer-overlap",
+      "rec-peer-overlap",
+      "rec-peer-pick",
+    );
     assert(
       !(await recommendations(db)).some((b) => b.reason.includes("you follow")),
     );

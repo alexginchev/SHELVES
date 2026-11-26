@@ -10,6 +10,7 @@ type Candidate = Book & {
   authorAffinity: number;
   circle: number;
   community: number;
+  peers: number;
 };
 const identity = (text: string) =>
   text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
@@ -64,24 +65,48 @@ export async function recommendations(
       WHERE p.kind='review' AND p.rating BETWEEN 1 AND 5 AND p.user_id<>?
       ${hidden.length ? `AND p.user_id NOT IN (${hidden.map(() => "?").join(",")})` : ""}
       GROUP BY p.book_id
+    ), my_public_likes AS (
+      SELECT DISTINCT lower(trim(b.title)) AS title,lower(trim(b.author)) AS author
+      FROM posts p JOIN books b ON b.id=p.book_id
+      WHERE p.user_id=? AND p.kind='review' AND p.rating>=4
+        AND lower(trim(b.author))<>'' AND lower(trim(b.author))<>'unknown author'
+    ), similar_readers AS (
+      SELECT p.user_id,count(DISTINCT p.book_id) AS shared
+      FROM posts p JOIN books b ON b.id=p.book_id
+      JOIN my_public_likes mine ON mine.title=lower(trim(b.title)) AND mine.author=lower(trim(b.author))
+      WHERE p.kind='review' AND p.rating>=4 AND p.user_id<>?
+        ${hidden.length ? `AND p.user_id NOT IN (${hidden.map(() => "?").join(",")})` : ""}
+      GROUP BY p.user_id ORDER BY shared DESC,p.user_id LIMIT 50
+    ), peer_picks AS (
+      SELECT p.book_id,count(DISTINCT p.user_id) AS peers,
+        SUM(CASE WHEN s.shared>=2 THEN 2 ELSE 1 END) AS affinity
+      FROM posts p JOIN similar_readers s ON s.user_id=p.user_id
+      WHERE p.kind='review' AND p.rating>=4 GROUP BY p.book_id
     )
     SELECT b.*,COALESCE(g.affinity,0) AS "genreAffinity",COALESCE(a.affinity,0) AS "authorAffinity",
       COALESCE(v.circle,0) AS circle,COALESCE(v.community,0) AS community,
+      COALESCE(peer.peers,0) AS peers,
       COALESCE(g.affinity,0)+COALESCE(a.affinity,0)+${preferenceScore}+
       CASE WHEN COALESCE(v.circle,0)>2 THEN 4 ELSE COALESCE(v.circle,0)*2 END+
-      COALESCE(v.community,0) AS score
+      COALESCE(v.community,0)+CASE WHEN COALESCE(peer.affinity,0)>=3 THEN 7.5 ELSE COALESCE(peer.affinity,0)*2.5 END AS score
     FROM books b LEFT JOIN genres g ON g.genre=b.genre
     LEFT JOIN authors a ON a.author=lower(b.author) AND lower(b.author)<>'unknown author'
     LEFT JOIN reviews v ON v.book_id=b.id
+    LEFT JOIN peer_picks peer ON peer.book_id=b.id
     WHERE NOT EXISTS(SELECT 1 FROM reading r WHERE r.user_id=? AND r.book_id=b.id)
       AND NOT EXISTS(SELECT 1 FROM recommendation_feedback h WHERE h.user_id=? AND h.book_id=b.id)
+      AND NOT EXISTS(SELECT 1 FROM posts own WHERE own.user_id=? AND own.kind='review' AND own.book_id=b.id)
     ORDER BY score DESC,CASE WHEN b.id LIKE 'seed-%' THEN 0 ELSE 1 END,lower(b.title),b.id LIMIT 500`,
     userId,
     ...favoriteIds,
     userId,
     userId,
     ...hidden,
+    userId,
+    userId,
+    ...hidden,
     ...preferred,
+    userId,
     userId,
     userId,
   );
@@ -89,7 +114,9 @@ export async function recommendations(
     ? await db.all<Book>(
         `
     SELECT b.* FROM books b WHERE EXISTS(SELECT 1 FROM reading r WHERE r.user_id=? AND r.book_id=b.id)
-      OR EXISTS(SELECT 1 FROM recommendation_feedback h WHERE h.user_id=? AND h.book_id=b.id)`,
+      OR EXISTS(SELECT 1 FROM recommendation_feedback h WHERE h.user_id=? AND h.book_id=b.id)
+      OR EXISTS(SELECT 1 FROM posts p WHERE p.user_id=? AND p.kind='review' AND p.book_id=b.id)`,
+        userId,
         userId,
         userId,
       )
@@ -115,7 +142,8 @@ export async function recommendations(
       b.genreAffinity > 0 ||
       b.authorAffinity > 0 ||
       b.circle > 0 ||
-      b.community > 0;
+      b.community > 0 ||
+      b.peers > 0;
     return relevant;
   });
   // An empty cold start still has something real to browse. Once there are
@@ -140,8 +168,15 @@ export async function recommendations(
         a.id.localeCompare(b.id),
     );
     const candidate = remaining.shift()!;
-    const { score, genreAffinity, authorAffinity, circle, community, ...book } =
-      candidate;
+    const {
+      score,
+      genreAffinity,
+      authorAffinity,
+      circle,
+      community,
+      peers,
+      ...book
+    } = candidate;
     const author = identity(book.author),
       key = workKey(book);
     if (
@@ -162,19 +197,21 @@ export async function recommendations(
     const reason =
       circle > 0
         ? `Rated highly by ${circle === 1 ? "a reader you follow" : "readers you follow"}`
-        : favoriteAuthor
-          ? `Because you loved ${favoriteAuthor.title}`
-          : favoriteGenre
-            ? `In the world of ${favoriteGenre.genre.toLowerCase()} you love`
-            : preferred.has(book.genre)
-              ? `Because you chose ${book.genre.toLowerCase()}`
-              : authorAffinity > 0
-                ? `More from ${book.author}`
-                : genreAffinity > 0
-                  ? `Inspired by your interest in ${book.genre.toLowerCase()}`
-                  : community > 0
-                    ? "Rated highly in public community reviews"
-                    : "From the Shelves starter collection";
+        : peers > 0
+          ? `Loved by ${peers === 1 ? "a reader" : "readers"} with your taste`
+          : favoriteAuthor
+            ? `Because you loved ${favoriteAuthor.title}`
+            : favoriteGenre
+              ? `In the world of ${favoriteGenre.genre.toLowerCase()} you love`
+              : preferred.has(book.genre)
+                ? `Because you chose ${book.genre.toLowerCase()}`
+                : authorAffinity > 0
+                  ? `More from ${book.author}`
+                  : genreAffinity > 0
+                    ? `Inspired by your interest in ${book.genre.toLowerCase()}`
+                    : community > 0
+                      ? "Rated highly in public community reviews"
+                      : "From the Shelves starter collection";
     result.push({ ...book, reason });
   }
   return result;

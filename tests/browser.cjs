@@ -89,6 +89,12 @@ const { auditLayout } = require("./layout.cjs");
     await page
       .getByRole("region", { name: "Recommended books", exact: true })
       .waitFor();
+    await page
+      .getByRole("heading", { name: "Across the wider catalogue" })
+      .waitFor();
+    await page
+      .getByRole("link", { name: "Open A Book to Discover 1", exact: true })
+      .waitFor();
     assert((await page.title()).includes("Shelves"));
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page

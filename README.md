@@ -31,7 +31,7 @@ Optional: copy `.env.example` to `.env` to change the port, host, or database lo
 - Like posts, add comments, delete your own posts, and follow registered readers.
 - Open shareable reader profiles at `#reader/:id`, with public posts/reviews, bio and social counts.
 - Receive private in-app notifications for new follows, post appreciations and comments. Open the exact conversation, load older notifications, filter unread activity across the full history, and mark one or all as read.
-- Explore recommendations shaped by genre/author affinity and ratings, excluding saved and dismissed books.
+- Explore recommendations shaped by genre/author affinity, public reviews from followed readers and readers with overlapping public reviews, excluding saved, reviewed and dismissed books.
 - Use the original responsive shell, paper palette, watercolor hero, and mobile navigation.
 
 Reading records, shelves, and private reviews are owner-only. Display names, usernames, bios, posts, and comments are public. There are no fabricated readers, posts, or reading totals in the new app.
@@ -94,6 +94,8 @@ The current [remaining-work checklist](REMAINING-WORK.md) reconciles the master 
 SQLite keeps offline development available. The verified migration command copies SQLite records into an empty Supabase schema transactionally, preserves IDs/hashes/session records, and refuses to merge over existing cloud data. The earlier browser-only records remain in the prototype and are not automatically uploaded to accounts.
 
 Feed and notification history use 20-item cursor pages. The catalogue has server-side pagination; recommendations rank up to 500 candidates, and feed posts show up to 100 comments. Reading/profile writes use last-write-wins semantics. The feed refreshes after actions or reload, without realtime updates. Provider outages are reported and matching cached books remain available.
+
+The Home feed mixes public posts with real book and reader discovery. Its wider-catalogue row requests ten Google Books results at a time, caches pages briefly, and falls back to existing recommendations during provider errors. Reader-overlap recommendations use only public four- and five-star reviews; private ratings, shelves and notes never contribute to the peer signal. Muted, blocked and suspended readers are excluded.
 
 ## Supabase setup and migration
 

@@ -53,7 +53,16 @@ Suggested sequence after the completed lists milestone: public-review-based simi
 - [x] Preserved private defaults, ordering, 50-book capacity, spoilers and ownership checks.
 - [x] API coverage on SQLite/PostgreSQL and focused responsive browser coverage.
 
-The baseline feature table above predates this milestone. List likes/artwork/ranked mode/per-book notes and comment replies/likes remain later work. Next recommended feature: public-review-based similar-reader book recommendations.
+The baseline feature table above predates this milestone. List likes/artwork/ranked mode/per-book notes and comment replies/likes remain later work. Public-review-based similar-reader book recommendations are recorded in the later milestone below.
+
+## Completed priority: reader-overlap recommendations and fuller Home feed — 26 November 2026
+
+- [x] Use overlapping positive public book reviews to find similar readers and recommend their other highly reviewed books. Exclude muted, blocked and suspended readers, as well as books the viewer saved, reviewed or dismissed.
+- [x] Preserve existing genre, author, followed-reader and community signals as the fallback when public review overlap is sparse.
+- [x] Add real book picks, a paged Google Books row and responsive reader links below the Home conversations, including when the post feed is empty.
+- [x] Verify the ranking and privacy boundary in SQLite and PostgreSQL tests, plus Home layout at desktop and mobile widths.
+
+The next product milestone is a connected first-run path from profile and interests to favorite books and readers. Broader collaborative filtering, trend evaluation and candidate-generation scaling remain later work.
 
 ## Deployment readiness
 

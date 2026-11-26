@@ -51,6 +51,7 @@ import { ReadingPreferences } from "./ReadingPreferences";
 import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
 import { ExploreShelf, LibraryShelves, LibraryShelf } from "./LibraryShelves";
+import { HomeFeedDiscovery } from "./HomeFeedDiscovery";
 const views = {
   terms: "Terms of use",
   cookies: "Cookies",
@@ -1012,71 +1013,48 @@ export function App() {
                       />
                     ))}
                     <FeedMore feed={feedPage} />
+                    {filter === "all" ? (
+                      <HomeFeedDiscovery
+                        recommendations={data.recommendations}
+                        readers={data.readers}
+                        savedIds={data.library.map((record) => record.bookId)}
+                        genre={data.library[0]?.book.genre || "fiction"}
+                        onBook={openBookPage}
+                        onPost={startPost}
+                      />
+                    ) : null}
                     {!visiblePosts.length &&
                     !feedPage.busy &&
-                    !feedPage.error ? (
-                      filter === "all" &&
-                      data.favoriteBookCount === 3 &&
-                      data.recommendations.length ? (
-                        <section className="taste-feed-start">
-                          <div>
-                            <h2>Start with a good book.</h2>
-                            <p>
-                              Your reading orbit has already found a few paths
-                              in. Conversations from readers will appear here as
-                              they arrive.
-                            </p>
-                            <a href="#discover" className="outline-btn">
-                              See your picks <Icon name="arrow" />
-                            </a>
-                          </div>
-                          <div className="taste-feed-covers">
-                            {data.recommendations.slice(0, 2).map((book) => (
-                              <button
-                                type="button"
-                                key={book.id}
-                                onClick={() => openBookPage(book)}
-                                aria-label={`Open ${book.title}`}
-                              >
-                                <Cover book={book} />
-                                <span>{book.title}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-                      ) : (
-                        <section className="view-panel empty-state">
-                          <span className="section-kicker">
-                            GOOD CONVERSATIONS START SMALL
-                          </span>
-                          <h2>
-                            {filter === "following"
-                              ? data.stats?.following
-                                ? "Your reading circle is quiet."
-                                : "Build your reading circle."
-                              : "The next story could be yours."}
-                          </h2>
-                          <p>
-                            {filter === "following"
-                              ? data.stats?.following
-                                ? "New public reviews, posts and shared reading progress from your circle will appear here."
-                                : "Follow other readers to see their public reviews, posts and shared reading progress here."
-                              : "Share a thought about what you are reading, or find your next book."}
-                          </p>
-                          <button
-                            className="primary-btn"
-                            onClick={() =>
-                              filter === "following"
-                                ? navigate("readers")
-                                : startPost()
-                            }
-                          >
-                            {filter === "following"
-                              ? "Find readers ↗"
-                              : "Share a thought ↗"}
-                          </button>
-                        </section>
-                      )
+                    !feedPage.error &&
+                    filter !== "all" ? (
+                      <section className="view-panel empty-state">
+                        <h2>
+                          {filter === "following"
+                            ? data.stats?.following
+                              ? "Your reading circle is quiet."
+                              : "Build your reading circle."
+                            : "The next story could be yours."}
+                        </h2>
+                        <p>
+                          {filter === "following"
+                            ? data.stats?.following
+                              ? "New public reviews, posts and shared reading progress from your circle will appear here."
+                              : "Follow other readers to see their public reviews, posts and shared reading progress here."
+                            : "Share a thought about what you are reading, or find your next book."}
+                        </p>
+                        <button
+                          className="primary-btn"
+                          onClick={() =>
+                            filter === "following"
+                              ? navigate("readers")
+                              : startPost()
+                          }
+                        >
+                          {filter === "following"
+                            ? "Find readers ↗"
+                            : "Share a thought ↗"}
+                        </button>
+                      </section>
                     ) : null}
                   </div>
                 </>

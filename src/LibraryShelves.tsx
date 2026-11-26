@@ -217,11 +217,13 @@ export function ExploreShelf({
   savedIds,
   fallback,
   onBook,
+  title = "Beyond your shelf",
 }: {
   genre: string;
   savedIds: string[];
   fallback: Recommendation[];
   onBook: (book: Book) => void;
+  title?: string;
 }) {
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<Book[]>([]);
@@ -252,7 +254,7 @@ export function ExploreShelf({
   return (
     <section className="explore-shelf" aria-label="Discover more books">
       <div className="library-shelf-heading">
-        <h3>Beyond your shelf</h3>
+        <h3>{title}</h3>
         <a href="#discover" className="plain-link">
           Explore books <Icon name="arrowUpRight" />
         </a>
