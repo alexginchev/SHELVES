@@ -1018,7 +1018,7 @@ export function App() {
                         recommendations={data.recommendations}
                         readers={data.readers}
                         savedIds={data.library.map((record) => record.bookId)}
-                        genre={data.library[0]?.book.genre || "fiction"}
+                        genre={data.recommendations[0]?.genre || "Fiction"}
                         onBook={openBookPage}
                         onPost={startPost}
                       />
@@ -1177,7 +1177,7 @@ export function App() {
                   </div>
                   {query.trim().length < 2 ? (
                     <ExploreShelf
-                      genre={data.library[0]?.book.genre || "fiction"}
+                      genre={data.recommendations[0]?.genre || "Fiction"}
                       savedIds={data.library.map((record) => record.bookId)}
                       fallback={data.recommendations.slice(0, 8)}
                       onBook={openBookPage}
@@ -1348,7 +1348,7 @@ export function App() {
                       ) : null}
                       {!shelf && !libraryQuery ? (
                         <ExploreShelf
-                          genre={data.library[0]?.book.genre || "fiction"}
+                          genre={data.recommendations[0]?.genre || "Fiction"}
                           savedIds={data.library.map((record) => record.bookId)}
                           fallback={data.recommendations.slice(0, 8)}
                           onBook={openBookPage}

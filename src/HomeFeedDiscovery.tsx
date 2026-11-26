@@ -81,7 +81,7 @@ export function HomeFeedDiscovery({
       <ExploreShelf
         title="Across the wider catalogue"
         genre={genre}
-        savedIds={savedIds}
+        savedIds={[...savedIds, ...nextPicks.map((book) => book.id)]}
         fallback={recommendations.slice(0, 8)}
         onBook={onBook}
       />

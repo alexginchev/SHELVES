@@ -505,6 +505,12 @@ body {
   object-fit: cover;
   box-shadow: 4px 6px 12px #0004;
 }
+.explore-shelf-reason {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  line-height: 1.35;
+}
 .explore-shelf-pages {
   display: flex;
   align-items: center;

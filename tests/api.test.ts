@@ -5,6 +5,7 @@ import { seedReviewFixture } from "./review-fixture.ts";
 import { bookReviewPage } from "../server/book-reviews.ts";
 import { editionVolumes } from "./edition-fixture.ts";
 import { recommendationQuality, rankSearch } from "../server/book-quality.ts";
+import { discoverNovels, DISCOVERY_FIELDS } from "../server/discovery.ts";
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -1933,7 +1934,7 @@ test("recommendations use public social signals, respect privacy and diversify e
       "social-target",
       "Z special story",
       "Social Author",
-      "History",
+      "Fiction",
       200,
       "A complete story with fully described characters, setting and a thoughtful narrative.",
       null,
@@ -1944,7 +1945,7 @@ test("recommendations use public social signals, respect privacy and diversify e
       "social-edition",
       "Z special story",
       "Social Author",
-      "History",
+      "Fiction",
       250,
       "Another complete edition of this fully described story and its thoughtful narrative.",
       null,
@@ -1955,7 +1956,7 @@ test("recommendations use public social signals, respect privacy and diversify e
       "social-second",
       "Z second story",
       "Social Author",
-      "History",
+      "Fiction",
       200,
       "A complete story with fully described characters, setting and a thoughtful narrative.",
       null,
@@ -1966,7 +1967,7 @@ test("recommendations use public social signals, respect privacy and diversify e
       "social-third",
       "Z third story",
       "Social Author",
-      "History",
+      "Fiction",
       200,
       "A complete story with fully described characters, setting and a thoughtful narrative.",
       null,
@@ -1982,6 +1983,7 @@ test("recommendations use public social signals, respect privacy and diversify e
       original.length > 0 && original.every((b) => b.id.startsWith("seed-")),
       "Cold start uses curated books, not unrelated imported filler",
     );
+    assert(!original.some((book) => book.id === "seed-sweetgrass"));
     // Someone else's private five-star reading must not change recommendations.
     await db.run(
       "INSERT INTO reading (user_id,book_id,status,rating,review) VALUES (?,?,?,?,?)",
@@ -2916,6 +2918,128 @@ test("recommendations require thematic relevance and credible imported editions"
     globalThis.fetch = originalFetch;
     if (oldKey === undefined) delete process.env.GOOGLE_BOOKS_API_KEY;
     else process.env.GOOGLE_BOOKS_API_KEY = oldKey;
+    await db.close();
+  }
+});
+
+test("novel discovery keeps complete fiction and excludes guides and reference books", async () => {
+  const db = await testDatabase();
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.GOOGLE_BOOKS_API_KEY;
+  const urls: URL[] = [];
+  const volume = (
+    id: string,
+    title: string,
+    categories: string[],
+    cover = true,
+  ) => ({
+    id,
+    volumeInfo: {
+      title,
+      authors: ["A. Writer"],
+      categories,
+      description:
+        "A curious traveller enters a strange city and discovers the hidden stories of its inhabitants.",
+      pageCount: 280,
+      publisher: "Test Press",
+      publishedDate: "2024",
+      language: "en",
+      imageLinks: cover
+        ? { thumbnail: `https://books.google.com/books/content?id=${id}` }
+        : undefined,
+      industryIdentifiers: [{ type: "ISBN_13", identifier: "9780000000001" }],
+    },
+  });
+  try {
+    process.env.GOOGLE_BOOKS_API_KEY = "test-only";
+    globalThis.fetch = async (input) => {
+      urls.push(new URL(String(input)));
+      return new Response(
+        JSON.stringify({
+          items: [
+            volume("novel-one", "The Hidden City", ["Fiction / Fantasy"]),
+            volume("novel-guide", "Study Guide to the Hidden City", [
+              "Fiction / Fantasy",
+            ]),
+            volume("novel-reference", "The City Encyclopedia", [
+              "Nonfiction / Reference",
+            ]),
+            volume(
+              "novel-coverless",
+              "The Bare City",
+              ["Fiction / Fantasy"],
+              false,
+            ),
+            volume("novel-edition", "The Hidden City", ["Fiction / Fantasy"]),
+          ],
+        }),
+      );
+    };
+    const result = await discoverNovels(db, "Fantasy", 0);
+    assert.deepEqual(
+      result.items.map((book) => book.title),
+      ["The Hidden City"],
+    );
+    assert.equal(result.hasMore, false);
+    assert.equal(urls.length, 1);
+    assert.equal(urls[0].searchParams.get("q"), "subject:Fantasy");
+    assert.equal(urls[0].searchParams.get("fields"), DISCOVERY_FIELDS);
+    assert.equal(urls[0].searchParams.get("printType"), "books");
+    assert.equal(urls[0].searchParams.get("maxResults"), "10");
+    assert.equal(urls[0].searchParams.get("langRestrict"), "en");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.GOOGLE_BOOKS_API_KEY;
+    else process.env.GOOGLE_BOOKS_API_KEY = originalKey;
+    await db.close();
+  }
+});
+
+test("a story-level match outranks a generic genre match", async () => {
+  const db = await testDatabase();
+  try {
+    await db.run(
+      "INSERT INTO users (id,email,username,display_name,password_hash) VALUES (?,?,?,?,?)",
+      "theme-reader",
+      "theme@example.test",
+      "theme_reader",
+      "Theme reader",
+      "unused",
+    );
+    await db.run(
+      "INSERT INTO reading (user_id,book_id,status,rating,review) VALUES (?,?,?,?,?)",
+      "theme-reader",
+      "seed-piranesi",
+      "Finished",
+      5,
+      "",
+    );
+    await db.run(
+      "INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?),(?,?,?,?,?,?,?,?,?)",
+      "theme-match",
+      "The Solitary Halls",
+      "A. Novelist",
+      "Fiction",
+      300,
+      "A solitary traveller wanders through endless halls in a strange house and questions everything she knows.",
+      null,
+      "sage",
+      2024,
+      "genre-only",
+      "The Ordinary Quest",
+      "B. Novelist",
+      "Fantasy",
+      300,
+      "A young queen sets out on an adventure across her kingdom to recover a lost crown before winter arrives.",
+      null,
+      "sage",
+      2024,
+    );
+    const picks = await recommendations(db, "theme-reader");
+    assert.equal(picks[0].id, "theme-match");
+    assert.equal(picks[0].reason, "A story to try after Piranesi");
+    assert(picks.some((book) => book.id === "genre-only"));
+  } finally {
     await db.close();
   }
 });

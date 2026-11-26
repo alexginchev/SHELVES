@@ -58,9 +58,7 @@ const { auditLayout } = require("./layout.cjs");
       }),
       page = await first.newPage();
     await first.route(
-      (url) =>
-        url.pathname === "/api/books/search" &&
-        url.searchParams.get("q")?.startsWith("subject:"),
+      (url) => url.pathname === "/api/books/discover",
       (route) => {
         const offset = Number(
           new URL(route.request().url()).searchParams.get("startIndex") || 0,
@@ -80,6 +78,7 @@ const { auditLayout } = require("./layout.cjs");
             })),
             source: "Google Books",
             warning: null,
+            hasMore: true,
           },
         });
       },

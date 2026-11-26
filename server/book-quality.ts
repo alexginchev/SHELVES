@@ -14,6 +14,7 @@ const derivativeKinds = [
   /\b(?:companion|reading guide)\b/i,
   /\b(?:workbook|blank journal|blank notebook)\b/i,
   /\b(?:conference proceedings|doctoral thesis|dissertation|technical report|working paper)\b/i,
+  /\b(?:teacher(?:'s)? edition|lesson plans?|exam prep|test prep|textbook|handbook|dictionary|encyclopedia|activity book|logbook|planner)\b/i,
 ];
 const derivative = {
   test: (title: string) =>
@@ -54,6 +55,43 @@ export function recommendationQuality(
     return false;
   const isbn = metadata.identifiers.some((i) => /^ISBN_(10|13)$/.test(i.type));
   return isbn || !!(metadata.publisher && book.pages && book.pages >= 40);
+}
+
+const fictionGenres = new Set([
+  "Classic",
+  "Literary",
+  "Fantasy",
+  "Fiction",
+  "Romance",
+  "Mystery",
+  "Science fiction",
+]);
+/** A stricter gate for pleasure-reading surfaces, not for ordinary book search. */
+export function leisureNovel(
+  book: Book,
+  metadata: BookMetadata | null,
+  requireCover = false,
+): boolean {
+  if (!recommendationQuality(book, metadata)) return false;
+  const categories = metadata?.tags.join(" ") || "";
+  if (
+    /\b(?:nonfiction|non-fiction|study aids|literary criticism|education|reference|business|self-help|computers|medical|law)\b/i.test(
+      categories,
+    )
+  )
+    return false;
+  const fictionCategory =
+    /\b(?:fiction|fantasy|romance|mystery|thriller|novels?|science fiction)\b/i.test(
+      categories,
+    );
+  if (!fictionCategory && !fictionGenres.has(book.genre)) return false;
+  if (book.id.startsWith("seed-")) return true;
+  return (
+    (!requireCover || !!book.cover) &&
+    !!book.pages &&
+    book.pages >= 100 &&
+    book.description.trim().length >= 60
+  );
 }
 export function searchRelevance(book: Book, query: string): number {
   const q = normalizedText(

@@ -1,5 +1,6 @@
 import { editionRoutes } from "./editions.ts";
 import { createHomeFeed } from "./home-feed.ts";
+import { discoverNovels } from "./discovery.ts";
 import { languageExpression, languageSchema } from "./book-language.ts";
 import { safetyRoutes, assertInteraction } from "./social-safety.ts";
 import { profileMediaRoutes } from "./profile-media.ts";
@@ -301,6 +302,22 @@ export function createApp(db: Store) {
         startIndex,
       }),
     );
+  });
+  app.get("/api/books/discover", async (req, res) => {
+    const genre = z
+      .string()
+      .trim()
+      .max(40)
+      .default("Fiction")
+      .parse(req.query.genre);
+    const startIndex = z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(10000)
+      .default(0)
+      .parse(req.query.startIndex);
+    res.json(await discoverNovels(db, genre, startIndex));
   });
   app.get("/api/books/isbn/:isbn", async (req, res) => {
     const book = await getBookByISBN(db, String(req.params.isbn));

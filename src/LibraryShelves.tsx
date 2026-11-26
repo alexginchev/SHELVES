@@ -14,7 +14,12 @@ const sections: { status: ReadingStatus; title: string }[] = [
   { status: "Finished", title: "Finished" },
   { status: "Did not finish", title: "Set aside" },
 ];
-type DiscoveryPage = { items: Book[]; error: string; until: number };
+type DiscoveryPage = {
+  items: Book[];
+  hasMore: boolean;
+  error: string;
+  until: number;
+};
 const discoveryCache = new Map<string, DiscoveryPage>();
 const discoveryRequests = new Map<string, Promise<DiscoveryPage>>();
 
@@ -25,17 +30,19 @@ function discoveryPage(subject: string, page: number, refresh = false) {
     return Promise.resolve(cached);
   const pending = discoveryRequests.get(key);
   if (pending) return pending;
-  const request = api<{ items: Book[] }>(
-    `/books/search?q=${encodeURIComponent(`subject:${subject}`)}&startIndex=${page * 10}`,
+  const request = api<{ items: Book[]; hasMore: boolean }>(
+    `/books/discover?genre=${encodeURIComponent(subject)}&startIndex=${page * 10}`,
     { signal: AbortSignal.timeout(12000) },
   )
     .then((result): DiscoveryPage => ({
       items: result.items,
+      hasMore: result.hasMore,
       error: "",
       until: Date.now() + 300000,
     }))
     .catch((): DiscoveryPage => ({
       items: [],
+      hasMore: false,
       error: "Could not load more books right now.",
       until: Date.now() + 60000,
     }))
@@ -227,6 +234,7 @@ export function ExploreShelf({
 }) {
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<Book[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -241,6 +249,7 @@ export function ExploreShelf({
     discoveryPage(subject, page, refresh).then((result) => {
       if (!active) return;
       setItems(result.items);
+      setHasMore(result.hasMore);
       setError(result.error);
       setBusy(false);
     });
@@ -248,9 +257,18 @@ export function ExploreShelf({
       active = false;
     };
   }, [subject, page, retry]);
-  const visible = (error ? fallback : items).filter(
-    (book) => !savedIds.includes(book.id),
-  );
+  const seen = new Set<string>();
+  // The reader's ranked picks lead; the provider catalogue extends the shelf.
+  const visible = (
+    page === 0 ? [...fallback, ...items] : error ? fallback : items
+  )
+    .filter((book) => !savedIds.includes(book.id))
+    .filter((book) => {
+      const work = `${book.title.toLowerCase().trim()}\0${book.author.toLowerCase().trim()}`;
+      if (seen.has(work)) return false;
+      seen.add(work);
+      return true;
+    });
   return (
     <section className="explore-shelf" aria-label="Discover more books">
       <div className="library-shelf-heading">
@@ -299,13 +317,18 @@ export function ExploreShelf({
             <Cover book={book} />
             <strong>{book.title}</strong>
             <small>{book.author}</small>
+            {"reason" in book && typeof book.reason === "string" ? (
+              <em className="explore-shelf-reason">{book.reason}</em>
+            ) : null}
           </a>
         ))}
       </div>
-      {!busy && !error && items.length === 0 ? (
-        <p className="shelf-loading">No more titles on this page.</p>
+      {!busy && !error && items.length === 0 && !visible.length ? (
+        <p className="shelf-loading">
+          No suitable novels on this page. Try another page.
+        </p>
       ) : null}
-      {!busy && !error && (page > 0 || items.length === 10) ? (
+      {!busy && !error && (page > 0 || hasMore) ? (
         <div className="explore-shelf-pages">
           <button
             type="button"
@@ -319,7 +342,7 @@ export function ExploreShelf({
           <button
             type="button"
             className="outline-btn"
-            disabled={items.length < 10}
+            disabled={!hasMore}
             onClick={() => setPage((value) => value + 1)}
           >
             More books <Icon name="arrow" />
