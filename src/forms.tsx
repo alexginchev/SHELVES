@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import type { Book, Reading, Shelf, User, Post } from "../shared/types";
 import { Dialog, ErrorMessage, Form, Icon } from "./components";
 import { BrandMark } from "./SiteIdentity";
+import { StarRatingInput } from "./StarRating";
 import { api, json } from "./api";
 type Done = () => Promise<void>;
 function errorText(error: unknown) {
@@ -283,17 +284,7 @@ export function BookDialog({
             ))}
           </select>
         </label>
-        <label>
-          Your rating
-          <select name="rating" defaultValue={record?.rating || 0}>
-            <option value="0">Not rated</option>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option value={n} key={n}>
-                {n} {n === 1 ? "star" : "stars"}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StarRatingInput initial={record?.rating || 0} />
         <label>
           Page reached
           <input

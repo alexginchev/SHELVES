@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { testDatabase } from "./database.ts";
 import { recommendations } from "../server/recommendations.ts";
+import { library, saveReading, stats } from "../server/services.ts";
+import { workIdentity } from "../shared/book-identity.ts";
 import {
   recommendationSubjects,
   refreshRecommendationPool,
@@ -42,6 +44,82 @@ test("book language selects matching editions and falls back to English", async 
       bulgarian.map((book) => book.id),
       ["gb_bg_novel"],
     );
+  } finally {
+    await db.close();
+  }
+});
+
+test("translated editions share a reading state and series picks follow order", async () => {
+  const db = await testDatabase();
+  try {
+    await db.run(
+      "INSERT INTO users (id,email,username,display_name,password_hash) VALUES (?,?,?,?,?)",
+      "series-reader",
+      "series@example.test",
+      "series_reader",
+      "Reader",
+      "unused",
+    );
+    const entries = [
+      ["seed-acotar-bg", "Двор от рози и бодли", "Сара Дж. Маас"],
+      ["seed-acotar-en", "A Court of Thorns and Roses", "Sarah J. Maas"],
+      ["seed-acotar-two", "A Court of Mist and Fury", "Sarah J. Maas"],
+      ["seed-acotar-five", "A Court of Silver Flames", "Sarah J. Maas"],
+    ];
+    for (const [id, title, author] of entries)
+      await db.run(
+        "INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?)",
+        id,
+        title,
+        author,
+        "Fantasy",
+        300,
+        "A complete fantasy story with a rich world and characters facing peril across the realm.",
+        "https://books.google.com/books/content?id=series",
+        "sage",
+        2020,
+      );
+    const input = {
+      status: "Finished" as const,
+      page: 300,
+      rating: 5,
+      review: "",
+      shelfIds: [],
+    };
+    await saveReading(db, "series-reader", "seed-acotar-bg", input);
+    assert.equal(
+      workIdentity({ title: entries[0][1], author: entries[0][2] }),
+      workIdentity({ title: entries[1][1], author: entries[1][2] }),
+    );
+    const picks = await recommendations(db, "series-reader");
+    assert(
+      !picks.some((book) =>
+        ["seed-acotar-en", "seed-acotar-five"].includes(book.id),
+      ),
+    );
+    assert(picks.some((book) => book.id === "seed-acotar-two"));
+    await saveReading(db, "series-reader", "seed-acotar-en", input);
+    assert.equal((await library(db, "series-reader")).length, 1);
+    assert.equal((await stats(db, "series-reader")).finished, 1);
+    // Existing accounts may already have conflicting edition rows. A later
+    // want-to-read entry must not make a finished work look unread again.
+    await db.run(
+      "INSERT INTO reading (user_id,book_id,status,page,rating,review) VALUES (?,?,?,?,?,?)",
+      "series-reader",
+      "seed-acotar-bg",
+      "Want to read",
+      0,
+      0,
+      "",
+    );
+    await db.run(
+      "UPDATE reading SET updated_at=? WHERE user_id=? AND book_id=?",
+      "2099-01-01 00:00:00",
+      "series-reader",
+      "seed-acotar-bg",
+    );
+    assert.equal((await library(db, "series-reader"))[0].status, "Finished");
+    assert.equal((await stats(db, "series-reader")).finished, 1);
   } finally {
     await db.close();
   }

@@ -7,6 +7,7 @@ import type { BookMetadata } from "../shared/book-metadata.ts";
 import { hiddenReaders } from "./social-safety.ts";
 import type { Store } from "./store.ts";
 import type { Book, Recommendation } from "../shared/types.ts";
+import { workIdentity, seriesPosition } from "../shared/book-identity.ts";
 
 type Candidate = Book & {
   score: number;
@@ -18,8 +19,7 @@ type Candidate = Book & {
 };
 const identity = (text: string) =>
   text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
-const workKey = (book: Book) =>
-  `${identity(book.title)}\0${identity(book.author)}`;
+const workKey = workIdentity;
 // Stable for one day and one reader: reloading does not shuffle the shelf,
 // while equally scored books do not occupy the same slots forever.
 function dailyOrder(book: Book, userId: string, day: number) {
@@ -176,6 +176,29 @@ export async function recommendations(
   const seen = new Set([...excluded, ...favorites].map(workKey)),
     authorCounts = new Map<string, number>(),
     genreCounts = new Map<string, number>();
+  const completedSeries = new Map<string, number>();
+  const readerHistory = userId
+    ? await db.all<Book & { status: string }>(
+        "SELECT b.*,r.status FROM reading r JOIN books b ON b.id=r.book_id WHERE r.user_id=?",
+        userId,
+      )
+    : [];
+  for (const book of readerHistory) {
+    const series = seriesPosition(book);
+    if (series && series.position > 0 && book.status === "Finished")
+      completedSeries.set(
+        series.series,
+        Math.max(completedSeries.get(series.series) || 0, series.position),
+      );
+  }
+  const seriesReady = (book: Book) => {
+    const series = seriesPosition(book);
+    return (
+      !series ||
+      (series.position > 0 &&
+        series.position <= (completedSeries.get(series.series) || 0) + 1)
+    );
+  };
   const metadataRows = await db.all<{ book_id: string; details: string }>(
     "SELECT book_id,details FROM book_metadata",
   );
@@ -241,6 +264,7 @@ export async function recommendations(
       seen.has(workKey(b)) ||
       b.authorAffinity < 0 ||
       !pleasantFit(b) ||
+      !seriesReady(b) ||
       !matchesLanguage(b)
     )
       return false;
@@ -264,6 +288,7 @@ export async function recommendations(
             (book.id.startsWith("gb_") && !!book.cover)) &&
           !seen.has(workKey(book)) &&
           pleasantFit(book) &&
+          seriesReady(book) &&
           matchesLanguage(book),
       );
   const result: Recommendation[] = [];

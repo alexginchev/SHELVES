@@ -16,6 +16,12 @@ import {
 import type { FormEvent } from "react";
 import { useCursorPages } from "./useCursorPages";
 import { ActivityMore } from "./PagedFeed";
+import {
+  acotarOrder,
+  seriesPosition,
+  workIdentity,
+} from "../shared/book-identity";
+import { RatingStars, StarRatingInput } from "./StarRating";
 const emptyReviews: {
   items: Post[];
   mine: Post | null;
@@ -69,16 +75,11 @@ export function PublicReviewDialog({
         {book.title} · {book.author}
       </p>
       <Form noValidate onSubmit={submit}>
-        <label>
-          Public star rating
-          <select name="rating" defaultValue={mine?.rating || 5}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option value={n} key={n}>
-                {n} {n === 1 ? "star" : "stars"}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StarRatingInput
+          initial={mine?.rating || 5}
+          label="Public star rating"
+          allowNone={false}
+        />
         <label>
           Public review
           <textarea
@@ -117,7 +118,8 @@ export function PublicReviewDialog({
 export function BookPage({
   id,
   user,
-  record,
+  record: savedRecord,
+  library,
   revision,
   onRead,
   onAuth,
@@ -126,6 +128,7 @@ export function BookPage({
   id: string;
   user: User | null;
   record?: Reading;
+  library: Reading[];
   revision: number;
   onRead: (b: Book) => void;
   onAuth: () => void;
@@ -294,6 +297,13 @@ export function BookPage({
         <BrandLoading label="Opening this story…" />
       </section>
     );
+  const record =
+    savedRecord ||
+    (data
+      ? library.find(
+          (entry) => workIdentity(entry.book) === workIdentity(data.book),
+        )
+      : undefined);
   if (!data)
     return (
       <section className="view-panel">
@@ -308,6 +318,7 @@ export function BookPage({
       </section>
     );
   const { book, summary } = data;
+  const series = seriesPosition(book);
   return (
     <>
       <section className="view-panel book-page">
@@ -343,7 +354,8 @@ export function BookPage({
             <p className="community-score">
               {summary.averageRating !== null ? (
                 <>
-                  <strong>{summary.averageRating.toFixed(1)}</strong> / 5{" "}
+                  <RatingStars rating={Math.round(summary.averageRating)} />
+                  <strong>{summary.averageRating.toFixed(1)}</strong>
                   <span>
                     · {summary.reviewCount} public{" "}
                     {summary.reviewCount === 1 ? "review" : "reviews"}
@@ -385,6 +397,39 @@ export function BookPage({
             </div>
           </div>
         </div>
+        {series?.series === "acotar" && series.position > 0 ? (
+          <section
+            className="series-trail"
+            aria-label="A Court of Thorns and Roses reading order"
+          >
+            <div>
+              <span className="section-kicker">READING ORDER</span>
+              <h3>Find your place in the series</h3>
+            </div>
+            <ol>
+              {acotarOrder.map((title, index) => {
+                const number = index + 1;
+                const finished = library.some(
+                  (entry) =>
+                    seriesPosition(entry.book)?.series === "acotar" &&
+                    seriesPosition(entry.book)?.position === number &&
+                    entry.status === "Finished",
+                );
+                return (
+                  <li
+                    key={title}
+                    className={`${number === series.position ? "current" : ""} ${finished ? "finished" : ""}`}
+                  >
+                    <span>
+                      {finished ? "✓" : number.toString().padStart(2, "0")}
+                    </span>
+                    <small>{title}</small>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ) : null}
         <div className="book-page-body">
           <div className="book-page-description">
             <h3>About this book</h3>
@@ -396,7 +441,9 @@ export function BookPage({
                 <strong>Your reading</strong>
                 <span>
                   {record.status}
-                  {record.rating ? ` · ${record.rating}/5 stars` : ""}
+                  {record.rating ? (
+                    <RatingStars rating={record.rating} />
+                  ) : null}
                   {record.page ? ` · page ${record.page}` : ""}
                 </span>
               </p>
@@ -530,7 +577,8 @@ export function BookPage({
           <>
             {reviews.items.length ? (
               <p className="local-note" role="status">
-                {reviews.items.length} {reviews.items.length === 1 ? "review" : "reviews"}
+                {reviews.items.length}{" "}
+                {reviews.items.length === 1 ? "review" : "reviews"}
               </p>
             ) : null}
             <div className="feed-list">

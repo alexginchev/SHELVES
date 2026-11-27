@@ -18,6 +18,7 @@ import type {
 } from "../shared/types.ts";
 import { all, one, transaction } from "./db.ts";
 import { readingSchema } from "../shared/types.ts";
+import { workIdentity } from "../shared/book-identity.ts";
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -47,8 +48,16 @@ export async function library(db: Store, userId: string): Promise<Reading[]> {
   const shelves = new Map<string, string[]>();
   for (const a of assignments)
     shelves.set(a.bookId, [...(shelves.get(a.bookId) || []), a.shelfId]);
-  return rows.map(
-    ({ bookId, status, page, rating, review, finishedAt, ...book }) => ({
+  const statusPriority = {
+    "Want to read": 0,
+    "Did not finish": 1,
+    "Currently reading": 2,
+    Finished: 3,
+  };
+  const byWork = new Map<string, Reading>();
+  for (const { bookId, status, page, rating, review, finishedAt, ...book } of rows) {
+    const key = workIdentity(book);
+    const record: Reading = {
       bookId,
       status,
       page,
@@ -57,8 +66,26 @@ export async function library(db: Store, userId: string): Promise<Reading[]> {
       finishedAt,
       book,
       shelfIds: shelves.get(bookId) || [],
-    }),
+    };
+    const previous = byWork.get(key);
+    if (!previous) byWork.set(key, record);
+    else {
+      const shelfIds = [...new Set([...previous.shelfIds, ...record.shelfIds])];
+      if (statusPriority[record.status] > statusPriority[previous.status])
+        byWork.set(key, { ...record, shelfIds });
+      else byWork.set(key, { ...previous, shelfIds });
+    }
+  }
+  return [...byWork.values()];
+}
+async function matchingReadingIds(db: Store, userId: string, book: Book) {
+  const rows = await db.all<Book>(
+    "SELECT b.* FROM reading r JOIN books b ON b.id=r.book_id WHERE r.user_id=?",
+    userId,
   );
+  return rows
+    .filter((entry) => workIdentity(entry) === workIdentity(book))
+    .map((entry) => entry.id);
 }
 export async function saveReading(
   db: Store,
@@ -80,18 +107,31 @@ export async function saveReading(
     )
       throw new ApiError(403, "Choose one of your own shelves.");
   await transaction(db, async (tx) => {
+    const matchingIds = await matchingReadingIds(tx, userId, book);
     const old = await one<{
       finishedAt: string | null;
     }>(
       tx,
-      'SELECT finished_at AS "finishedAt" FROM reading WHERE user_id=? AND book_id=?',
+      `SELECT finished_at AS "finishedAt" FROM reading WHERE user_id=? AND book_id IN (${matchingIds.length ? matchingIds.map(() => "?").join(",") : "?"}) ORDER BY finished_at DESC LIMIT 1`,
       userId,
-      bookId,
+      ...(matchingIds.length ? matchingIds : [bookId]),
     );
     const finished =
       input.status === "Finished"
         ? old?.finishedAt || new Date().toISOString()
         : null;
+    for (const otherId of matchingIds.filter((id) => id !== bookId)) {
+      await tx.run(
+        "DELETE FROM shelf_books WHERE book_id=? AND shelf_id IN (SELECT id FROM shelves WHERE user_id=?)",
+        otherId,
+        userId,
+      );
+      await tx.run(
+        "DELETE FROM reading WHERE user_id=? AND book_id=?",
+        userId,
+        otherId,
+      );
+    }
     await tx.run(
       `INSERT INTO reading (user_id,book_id,status,page,rating,review,finished_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(user_id,book_id) DO UPDATE SET status=excluded.status,page=excluded.page,rating=excluded.rating,review=excluded.review,finished_at=excluded.finished_at,updated_at=CURRENT_TIMESTAMP`,
       userId,
@@ -112,17 +152,20 @@ export async function saveReading(
   });
 }
 export async function removeReading(db: Store, userId: string, bookId: string) {
+  const book = await bookById(db, bookId);
   await transaction(db, async (tx) => {
-    await tx.run(
-      "DELETE FROM shelf_books WHERE book_id=? AND shelf_id IN (SELECT id FROM shelves WHERE user_id=?)",
-      bookId,
-      userId,
-    );
-    await tx.run(
-      "DELETE FROM reading WHERE user_id=? AND book_id=?",
-      userId,
-      bookId,
-    );
+    for (const id of await matchingReadingIds(tx, userId, book)) {
+      await tx.run(
+        "DELETE FROM shelf_books WHERE book_id=? AND shelf_id IN (SELECT id FROM shelves WHERE user_id=?)",
+        id,
+        userId,
+      );
+      await tx.run(
+        "DELETE FROM reading WHERE user_id=? AND book_id=?",
+        userId,
+        id,
+      );
+    }
   });
 }
 export { recommendations } from "./recommendations.ts";
@@ -378,17 +421,23 @@ export async function savePublicReview(
 }
 
 export async function stats(db: Store, userId: string): Promise<Stats> {
-  return (await one<Stats>(
+  const base = (await one<Stats>(
     db,
     `SELECT u.goal,
- (SELECT count(*) FROM reading r WHERE r.user_id=u.id AND r.status='Finished' AND substr(CAST(r.finished_at AS TEXT),1,4)=?) AS finished,
- (SELECT count(*) FROM reading r WHERE r.user_id=u.id AND r.status='Currently reading') AS reading,
- (SELECT coalesce(sum(r.page),0) FROM reading r WHERE r.user_id=u.id) AS pages,
  (SELECT count(*) FROM follows f WHERE f.user_id=u.id) AS following,
  (SELECT count(*) FROM follows f WHERE f.followed_id=u.id) AS followers FROM users u WHERE u.id=?`,
-    String(new Date().getUTCFullYear()),
     userId,
   ))!;
+  const records = await library(db, userId);
+  const year = String(new Date().getUTCFullYear());
+  return {
+    ...base,
+    finished: records.filter(
+      (r) => r.status === "Finished" && r.finishedAt?.startsWith(year),
+    ).length,
+    reading: records.filter((r) => r.status === "Currently reading").length,
+    pages: records.reduce((total, r) => total + r.page, 0),
+  };
 }
 export async function makePost(
   db: Store,

@@ -56,6 +56,8 @@ import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
 import { ExploreShelf, LibraryShelves, LibraryShelf } from "./LibraryShelves";
 import { HomeFeedDiscovery } from "./HomeFeedDiscovery";
+import { workIdentity } from "../shared/book-identity";
+import { RatingStars } from "./StarRating";
 const views = {
   terms: "Terms of use",
   cookies: "Cookies",
@@ -675,6 +677,7 @@ export function App() {
                   id={bookId}
                   user={data.user}
                   record={data.library.find((r) => r.bookId === bookId)}
+                  library={data.library}
                   revision={revision}
                   onRead={setBook}
                   onAuth={() => setAuth(true)}
@@ -1558,7 +1561,11 @@ export function App() {
                       <article className="journal-entry" key={r.bookId}>
                         <Cover book={r.book} small />
                         <div className="journal-date">
-                          {r.rating ? `${r.rating} / 5` : "A NOTE"}
+                          {r.rating ? (
+                            <RatingStars rating={r.rating} />
+                          ) : (
+                            "A NOTE"
+                          )}
                         </div>
                         <div>
                           <button
@@ -1875,7 +1882,9 @@ export function App() {
         <BookDialog
           key={`${book.id}-${data.user?.id || "guest"}`}
           book={book}
-          record={data.library.find((r) => r.bookId === book.id)}
+          record={data.library.find(
+            (r) => workIdentity(r.book) === workIdentity(book),
+          )}
           shelves={data.shelves}
           user={data.user}
           onAuth={() => setAuth(true)}
