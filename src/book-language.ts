@@ -1,4 +1,5 @@
 import { bookLanguages, languageName } from "../shared/languages";
+import { readCookieChoice } from "./cookie-choice";
 
 // Time zone is an approximate location hint and needs no location permission.
 const localLanguages: Record<string, string> = {
@@ -34,5 +35,7 @@ export function automaticBookLanguage() {
   );
 }
 export function automaticLanguageLabel() {
+  if (readCookieChoice() !== "region")
+    return "Automatic (English until region is enabled)";
   return `Automatic (${languageName(automaticBookLanguage())})`;
 }

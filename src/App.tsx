@@ -49,6 +49,8 @@ import { Lists } from "./Lists";
 import { AccountSettings } from "./AccountSettings";
 import { BookLanguageSettings } from "./BookLanguageSettings";
 import { automaticBookLanguage } from "./book-language";
+import { CookieConsent } from "./CookieConsent";
+import { readCookieChoice } from "./cookie-choice";
 import { ReadingPreferences } from "./ReadingPreferences";
 import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
@@ -243,7 +245,8 @@ export function App() {
     const version = ++generation.current;
     try {
       const preferred =
-        localStorage.getItem("bookLanguage") || automaticBookLanguage();
+        localStorage.getItem("bookLanguage") ||
+        (readCookieChoice() === "region" ? automaticBookLanguage() : "en");
       const snapshot = await api<Snapshot>(
         `/snapshot?language=${encodeURIComponent(preferred)}`,
       );
@@ -271,6 +274,11 @@ export function App() {
     return () => {
       generation.current++;
     };
+  }, [refresh]);
+  useEffect(() => {
+    const update = () => void refresh();
+    window.addEventListener("shelves-cookie-choice", update);
+    return () => window.removeEventListener("shelves-cookie-choice", update);
   }, [refresh]);
   useEffect(() => {
     const update = () => {
@@ -1901,6 +1909,7 @@ export function App() {
       >
         {notice}
       </div>
+      {view !== "cookies" ? <CookieConsent /> : null}
     </>
   );
 }

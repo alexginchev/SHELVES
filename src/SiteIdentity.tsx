@@ -1,4 +1,5 @@
 // Keep one SVG instance per page load so its internal animation restarts on reload.
+import { CookieChoices } from "./CookieConsent";
 // Route changes reuse this URL and do not replay the mark.
 const brandMarkUrl = `/branding/shelves.svg?load=${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
@@ -92,9 +93,11 @@ export function SiteInformation({ page }: { page: "terms" | "cookies" }) {
       ) : (
         <>
           <p>
-            Shelves uses a sign-in cookie to remember your account between
-            visits. It is used for authentication, not advertising.
+            Shelves uses a sign-in cookie to remember your account. Browser
+            storage remembers your appearance, book language and region choice.
+            None of these are used for advertising.
           </p>
+          <CookieChoices />
           <h3>The sign-in cookie</h3>
           <dl className="cookie-facts">
             <dt>Name</dt>
@@ -109,11 +112,27 @@ export function SiteInformation({ page }: { page: "terms" | "cookies" }) {
               reading notes.
             </dd>
           </dl>
+          <h3>Book language and approximate region</h3>
+          <p>
+            If you choose “Use my region,” Shelves reads your browser’s time
+            zone and language to suggest a default book language. It sends the
+            resulting language code with book recommendation requests. Shelves
+            does not request GPS or precise location. If no suitable books are
+            available in that language, recommendations fall back to English.
+            You can also choose a preferred book language in Settings, which
+            takes priority over the automatic suggestion.
+          </p>
+          <p>
+            Your region choice, theme and book language preference are stored in
+            this browser. A signed-in book language preference is also saved to
+            your account so it follows you across devices. You can change the
+            region choice above at any time.
+          </p>
           <h3>Your choices</h3>
           <p>
-            You can browse public pages without signing in. You can also delete
-            or block cookies through your browser settings. Blocking the sign-in
-            cookie prevents account features from working.
+            You can browse public pages without signing in or using your region.
+            You can delete browser storage or block cookies in browser settings.
+            Blocking the sign-in cookie prevents account features from working.
           </p>
           <h3>External content</h3>
           <p>
