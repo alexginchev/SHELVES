@@ -58,6 +58,7 @@ function themes(book: Book) {
 export async function recommendations(
   db: Store,
   userId = "",
+  language = "",
 ): Promise<Recommendation[]> {
   const hidden = await hiddenReaders(db, userId);
   const preference = userId
@@ -231,8 +232,17 @@ export async function recommendations(
     leisureNovel(book, metadata.get(book.id) || null) ||
     (wantsOtherReading(book) &&
       recommendationQuality(book, metadata.get(book.id) || null));
+  const matchesLanguage = (book: Book) =>
+    !language ||
+    (metadata.get(book.id)?.language ||
+      (book.id.startsWith("seed-") ? "en" : "")) === language;
   const relevantCandidates = candidates.filter((b) => {
-    if (seen.has(workKey(b)) || b.authorAffinity < 0 || !pleasantFit(b))
+    if (
+      seen.has(workKey(b)) ||
+      b.authorAffinity < 0 ||
+      !pleasantFit(b) ||
+      !matchesLanguage(b)
+    )
       return false;
     const relevant =
       preferred.has(b.genre) ||
@@ -253,7 +263,8 @@ export async function recommendations(
           (book.id.startsWith("seed-") ||
             (book.id.startsWith("gb_") && !!book.cover)) &&
           !seen.has(workKey(book)) &&
-          pleasantFit(book),
+          pleasantFit(book) &&
+          matchesLanguage(book),
       );
   const result: Recommendation[] = [];
   const day = Math.floor(Date.now() / 86400000);

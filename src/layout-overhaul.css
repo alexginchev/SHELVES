@@ -537,6 +537,17 @@ body {
   display: grid;
   gap: 24px;
 }
+.book-language-settings {
+  display: grid;
+  gap: 14px;
+}
+.book-language-settings h2,
+.book-language-settings p { margin: 0; }
+.book-language-settings > p { max-width: 62ch; color: var(--ink-soft); }
+.book-language-settings label { font-weight: 650; }
+.book-language-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.book-language-controls select { flex: 1 1 230px; min-width: 0; max-width: 370px; }
+.book-language-controls .primary-btn { white-space: nowrap; }
 .settings-workspace .settings-profile form {
   margin-top: 20px;
 }
@@ -556,8 +567,8 @@ body {
   color: var(--ink);
 }
 .profile-settings-link svg {
-  width: 19px;
-  height: 19px;
+  width: 20px;
+  height: 20px;
 }
 .profile-workspace {
   display: grid;

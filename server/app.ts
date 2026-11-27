@@ -142,8 +142,16 @@ export function createApp(db: Store) {
   app.get("/api/auth/me", (_req, res) =>
     res.json({ user: res.locals.user || null }),
   );
-  app.get("/api/snapshot", async (_req, res) => {
+  app.get("/api/snapshot", async (req, res) => {
     const me = res.locals.user as User | undefined;
+    const savedLanguage = me
+      ? await db.get<{ preferred_book_language: string }>(
+          "SELECT preferred_book_language FROM users WHERE id=?",
+          me.id,
+        )
+      : undefined;
+    const bookLanguagePreference = savedLanguage?.preferred_book_language || "";
+    const requestedLanguage = languageSchema.parse(req.query.language);
     const [
       books,
       recs,
@@ -159,7 +167,11 @@ export function createApp(db: Store) {
         db,
         "SELECT * FROM books ORDER BY CASE WHEN id LIKE 'seed-%' THEN 0 ELSE 1 END,id LIMIT 100",
       ),
-      recommendationsWithRefresh(db, me?.id),
+      recommendationsWithRefresh(
+        db,
+        me?.id,
+        bookLanguagePreference || requestedLanguage,
+      ),
       feed(db, me?.id),
       readerSuggestions(db, me?.id),
       me ? library(db, me.id) : [],
@@ -175,6 +187,7 @@ export function createApp(db: Store) {
     ]);
     res.json({
       user: me || null,
+      bookLanguagePreference,
       books,
       recommendations: recs,
       posts,
@@ -523,10 +536,29 @@ export function createApp(db: Store) {
       items: await recommendationsWithRefresh(
         db,
         (res.locals.user as User | undefined)?.id,
+        (res.locals.user as User | undefined)
+          ? (
+              await db.get<{ preferred_book_language: string }>(
+                "SELECT preferred_book_language FROM users WHERE id=?",
+                (res.locals.user as User).id,
+              )
+            )?.preferred_book_language ||
+              languageSchema.parse(_req.query.language)
+          : languageSchema.parse(_req.query.language),
       ),
       algorithmVersion: "expanded-catalogue-v4",
     }),
   );
+  app.put("/api/settings/book-language", async (req, res) => {
+    const me = user(res);
+    const language = languageSchema.parse(req.body?.language);
+    await db.run(
+      "UPDATE users SET preferred_book_language=? WHERE id=?",
+      language,
+      me.id,
+    );
+    res.json({ language });
+  });
   app.put("/api/recommendations/:id/dismiss", async (req, res) => {
     const me = user(res);
     await bookById(db, id(req));

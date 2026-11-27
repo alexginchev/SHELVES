@@ -5,7 +5,47 @@ import { recommendations } from "../server/recommendations.ts";
 import {
   recommendationSubjects,
   refreshRecommendationPool,
+  recommendationsWithRefresh,
 } from "../server/recommendation-pool.ts";
+
+test("book language selects matching editions and falls back to English", async () => {
+  const db = await testDatabase();
+  try {
+    const english = await recommendationsWithRefresh(db, "", "en");
+    const fallback = await recommendationsWithRefresh(db, "", "bg");
+    assert(english.length > 0);
+    assert.deepEqual(fallback, english);
+    await db.run(
+      "INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?)",
+      "gb_bg_novel",
+      "The Blue Orchard",
+      "N. Writer",
+      "Fiction",
+      280,
+      "A family returns to an old orchard and discovers the letters hidden in its walls across many generations.",
+      "https://books.google.com/books/content?id=bg_novel",
+      "sage",
+      2024,
+    );
+    await db.run(
+      "INSERT INTO book_metadata VALUES (?,?)",
+      "gb_bg_novel",
+      JSON.stringify({
+        language: "bg",
+        tags: ["Fiction"],
+        identifiers: [{ type: "ISBN_13", identifier: "9780000000130" }],
+        publisher: "Story Press",
+      }),
+    );
+    const bulgarian = await recommendationsWithRefresh(db, "", "bg");
+    assert.deepEqual(
+      bulgarian.map((book) => book.id),
+      ["gb_bg_novel"],
+    );
+  } finally {
+    await db.close();
+  }
+});
 
 test("recommendations expand from credible novels and reuse the shared refresh", async () => {
   const db = await testDatabase();

@@ -22,9 +22,10 @@ export async function discoverNovels(
   db: Store,
   genre: string,
   startIndex: number,
+  language = "en",
 ) {
   const subject = subjects[genre] || "Fiction";
-  const result = await searchGoogleBooks(db, `subject:${subject}`, "en", {
+  const result = await searchGoogleBooks(db, `subject:${subject}`, language, {
     startIndex,
     fields: DISCOVERY_FIELDS,
   });

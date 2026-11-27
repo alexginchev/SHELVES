@@ -47,6 +47,8 @@ import { ReaderPage } from "./ReaderPage";
 import { Notifications, PostPage } from "./Notifications";
 import { Lists } from "./Lists";
 import { AccountSettings } from "./AccountSettings";
+import { BookLanguageSettings } from "./BookLanguageSettings";
+import { automaticBookLanguage } from "./book-language";
 import { ReadingPreferences } from "./ReadingPreferences";
 import { Catalog } from "./Catalog";
 import { ReaderDirectory } from "./ReaderDirectory";
@@ -119,6 +121,7 @@ const readView = (): View =>
             : "home";
 type Snapshot = {
   user: User | null;
+  bookLanguagePreference: string;
   books: Book[];
   recommendations: Recommendation[];
   posts: Post[];
@@ -132,6 +135,7 @@ type Snapshot = {
 };
 const empty: Snapshot = {
   user: null,
+  bookLanguagePreference: "",
   books: [],
   recommendations: [],
   posts: [],
@@ -238,7 +242,11 @@ export function App() {
   const refresh = useCallback(async () => {
     const version = ++generation.current;
     try {
-      const snapshot = await api<Snapshot>("/snapshot");
+      const preferred =
+        localStorage.getItem("bookLanguage") || automaticBookLanguage();
+      const snapshot = await api<Snapshot>(
+        `/snapshot?language=${encodeURIComponent(preferred)}`,
+      );
       if (version === generation.current) {
         setData(snapshot);
         setError("");
@@ -685,6 +693,15 @@ export function App() {
               ) : null}
               {!loading && view === "settings" ? (
                 <div className="settings-workspace">
+                  <BookLanguageSettings
+                    value={
+                      data.user
+                        ? data.bookLanguagePreference
+                        : localStorage.getItem("bookLanguage") || ""
+                    }
+                    signedIn={!!data.user}
+                    onSaved={refresh}
+                  />
                   {data.user ? (
                     <>
                       <section className="view-panel settings-profile">

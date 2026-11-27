@@ -96,7 +96,11 @@ export async function recommendationSubjects(
 /** Google imports are shared across readers, with a persistent daily refresh marker.
  * A failed provider call backs off for 30 minutes while saved books remain available.
  */
-export async function refreshRecommendationPool(db: Store, userId = "") {
+export async function refreshRecommendationPool(
+  db: Store,
+  userId = "",
+  language = "en",
+) {
   if (!process.env.GOOGLE_BOOKS_API_KEY?.trim()) return;
   const day = Math.floor(Date.now() / 86400000);
   const subjects = await recommendationSubjects(db, userId, day);
@@ -105,7 +109,7 @@ export async function refreshRecommendationPool(db: Store, userId = "") {
       // Walk twelve result pages before cycling; a reader should not see the
       // same first page of each subject on every refresh.
       const offset = (day % 12) * 10;
-      const marker = `recommendation-pool-v1:${genre}:${offset}`;
+      const marker = `recommendation-pool-v2:${language}:${genre}:${offset}`;
       const previous = await db.get<{
         items: string;
         fetched_at: number | string;
@@ -127,7 +131,7 @@ export async function refreshRecommendationPool(db: Store, userId = "") {
       const request = (async () => {
         let status = "retry";
         try {
-          const page = await discoverNovels(db, genre, offset);
+          const page = await discoverNovels(db, genre, offset, language);
           if (page.source === "Google Books") status = "ok";
         } catch {
           /* Saved recommendations still work during timeouts or rate limits. */
@@ -146,16 +150,25 @@ export async function refreshRecommendationPool(db: Store, userId = "") {
 }
 
 /** Keep API latency bounded while the shared catalogue grows in the background. */
-export async function recommendationsWithRefresh(db: Store, userId = "") {
+export async function recommendationsWithRefresh(
+  db: Store,
+  userId = "",
+  language = "",
+) {
+  const preferred = language || "en";
   if (
     !process.env.GOOGLE_BOOKS_API_KEY?.trim() ||
     process.env.NODE_ENV === "test"
   )
-    return recommendations(db, userId);
+    return recommendations(db, userId, preferred).then(async (items) =>
+      items.length || preferred === "en"
+        ? items
+        : recommendations(db, userId, "en"),
+    );
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      refreshRecommendationPool(db, userId).catch(() => {
+      refreshRecommendationPool(db, userId, preferred).catch(() => {
         /* Catalogue maintenance must never take down the recommendations endpoint. */
       }),
       new Promise<void>((resolve) => {
@@ -165,5 +178,8 @@ export async function recommendationsWithRefresh(db: Store, userId = "") {
   } finally {
     if (timer) clearTimeout(timer);
   }
-  return recommendations(db, userId);
+  const items = await recommendations(db, userId, preferred);
+  return items.length || preferred === "en"
+    ? items
+    : recommendations(db, userId, "en");
 }
