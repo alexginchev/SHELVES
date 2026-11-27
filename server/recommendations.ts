@@ -20,6 +20,15 @@ const identity = (text: string) =>
   text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
 const workKey = (book: Book) =>
   `${identity(book.title)}\0${identity(book.author)}`;
+// Stable for one day and one reader: reloading does not shuffle the shelf,
+// while equally scored books do not occupy the same slots forever.
+function dailyOrder(book: Book, userId: string, day: number) {
+  const value = `${userId}:${day}:${book.id}`;
+  let hash = 2166136261;
+  for (const character of value)
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return hash >>> 0;
+}
 const otherReadingGenres = new Set([
   "Nature",
   "Poetry",
@@ -235,17 +244,19 @@ export async function recommendations(
       themeMatch.has(b.id);
     return relevant;
   });
-  // An empty cold start still has something real to browse. Once there are
-  // strong matches, off-theme starter titles no longer fill recommendation slots.
+  // A cold start can use complete, covered novels imported from Google Books.
+  // Keep local unverified imports out of this pool; the starter books remain safe defaults.
   const remaining = relevantCandidates.length
     ? relevantCandidates
     : candidates.filter(
         (book) =>
-          book.id.startsWith("seed-") &&
+          (book.id.startsWith("seed-") ||
+            (book.id.startsWith("gb_") && !!book.cover)) &&
           !seen.has(workKey(book)) &&
           pleasantFit(book),
       );
   const result: Recommendation[] = [];
+  const day = Math.floor(Date.now() / 86400000);
   while (remaining.length && result.length < 24) {
     // A small diversity penalty preserves strong matches while letting other genres surface.
     remaining.sort(
@@ -258,6 +269,7 @@ export async function recommendations(
             (themeMatch.get(a.id)?.strength || 0) -
             (negativeTheme.get(a.id) || 0) -
             (genreCounts.get(a.genre) || 0) * 0.5) ||
+        dailyOrder(a, userId, day) - dailyOrder(b, userId, day) ||
         a.title.localeCompare(b.title) ||
         a.id.localeCompare(b.id),
     );
@@ -317,7 +329,7 @@ export async function recommendations(
                         : community > 0
                           ? "Rated highly in public community reviews"
                           : starterReasons[book.id] ||
-                            "A story from the Shelves collection";
+                            `A ${book.genre.toLowerCase()} story to explore`;
     result.push({ ...book, reason });
   }
   return result;

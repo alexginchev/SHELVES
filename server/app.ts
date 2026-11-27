@@ -1,5 +1,6 @@
 import { editionRoutes } from "./editions.ts";
 import { createHomeFeed } from "./home-feed.ts";
+import { recommendationsWithRefresh } from "./recommendation-pool.ts";
 import { discoverNovels } from "./discovery.ts";
 import { languageExpression, languageSchema } from "./book-language.ts";
 import { safetyRoutes, assertInteraction } from "./social-safety.ts";
@@ -158,7 +159,7 @@ export function createApp(db: Store) {
         db,
         "SELECT * FROM books ORDER BY CASE WHEN id LIKE 'seed-%' THEN 0 ELSE 1 END,id LIMIT 100",
       ),
-      recommendations(db, me?.id),
+      recommendationsWithRefresh(db, me?.id),
       feed(db, me?.id),
       readerSuggestions(db, me?.id),
       me ? library(db, me.id) : [],
@@ -519,11 +520,11 @@ export function createApp(db: Store) {
   });
   app.get("/api/recommendations", async (_req, res) =>
     res.json({
-      items: await recommendations(
+      items: await recommendationsWithRefresh(
         db,
         (res.locals.user as User | undefined)?.id,
       ),
-      algorithmVersion: "taste-feedback-v3",
+      algorithmVersion: "expanded-catalogue-v4",
     }),
   );
   app.put("/api/recommendations/:id/dismiss", async (req, res) => {
