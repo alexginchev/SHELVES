@@ -279,12 +279,14 @@ export function BookCard({
   book,
   reason,
   onOpen,
-  onDismiss,
+  onFeedback,
+  feedbackBusy,
 }: {
   book: Book;
   reason?: string;
   onOpen: (b: Book) => void;
-  onDismiss?: (b: Book) => void;
+  onFeedback?: (b: Book, signal: "more" | "less") => void;
+  feedbackBusy?: boolean;
 }) {
   return (
     <article className="book-tile">
@@ -310,13 +312,54 @@ export function BookCard({
       </a>
       <p>{book.author}</p>
       <span className="tag tag-sage">{book.genre}</span>
-      {reason ? <p className="recommendation-reason">{reason}</p> : null}
-      {onDismiss ? (
-        <button className="dismiss-book" onClick={() => onDismiss(book)}>
-          Not interested
-        </button>
+      {reason ? (
+        <p className="recommendation-reason">
+          <Icon name="sparkles" /> {reason}
+        </p>
+      ) : null}
+      {onFeedback ? (
+        <RecommendationActions
+          book={book}
+          onFeedback={onFeedback}
+          disabled={feedbackBusy}
+        />
       ) : null}
     </article>
+  );
+}
+export function RecommendationActions({
+  book,
+  onFeedback,
+  disabled,
+}: {
+  book: Book;
+  onFeedback: (book: Book, signal: "more" | "less") => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className="recommendation-actions"
+      aria-label={`Tune picks like ${book.title}`}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onFeedback(book, "more")}
+        aria-label={`More like ${book.title}`}
+        title={`More like ${book.title}`}
+      >
+        <Icon name="sparkles" /> <span>More</span>
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onFeedback(book, "less")}
+        aria-label={`Not for me: ${book.title}`}
+        title={`Not for me: ${book.title}`}
+      >
+        <Icon name="close" /> <span>Pass</span>
+      </button>
+    </div>
   );
 }
 export function PostCard({

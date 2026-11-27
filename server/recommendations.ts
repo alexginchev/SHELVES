@@ -66,6 +66,15 @@ export async function recommendations(
         ...favoriteIds,
       )
     : [];
+  const feedback = userId
+    ? await db.all<Book & { signal: "more" | "less" }>(
+        `SELECT b.*,t.signal FROM recommendation_taste_feedback t
+         JOIN books b ON b.id=t.book_id WHERE t.user_id=? ORDER BY b.id LIMIT 30`,
+        userId,
+      )
+    : [];
+  const moreBooks = feedback.filter((book) => book.signal === "more");
+  const lessBooks = feedback.filter((book) => book.signal === "less");
   const preferred = new Set<string>(
     preference ? JSON.parse(preference.genres) : [],
   );
@@ -84,6 +93,9 @@ export async function recommendations(
       UNION ALL
       SELECT b.genre,lower(b.author),4 AS weight FROM books b
       WHERE b.id IN (${favoriteIds.length ? favoriteIds.map(() => "?").join(",") : "NULL"})
+      UNION ALL
+      SELECT b.genre,lower(b.author),CASE WHEN t.signal='more' THEN 5 ELSE -4 END AS weight
+      FROM recommendation_taste_feedback t JOIN books b ON b.id=t.book_id WHERE t.user_id=?
     ), genres AS (SELECT genre,SUM(weight) AS affinity FROM taste GROUP BY genre),
     authors AS (SELECT author,SUM(weight) AS affinity FROM taste GROUP BY author),
     reviews AS (
@@ -130,6 +142,7 @@ export async function recommendations(
     ...favoriteIds,
     userId,
     userId,
+    userId,
     ...hidden,
     userId,
     userId,
@@ -171,13 +184,23 @@ export async function recommendations(
     : [];
   const anchors = [
     ...new Map(
-      [...favorites, ...liked].map((book) => [book.id, book]),
+      [...favorites, ...liked, ...moreBooks].map((book) => [book.id, book]),
     ).values(),
   ].slice(0, 20);
   const anchorThemes = anchors.map((book) => ({ book, words: themes(book) }));
   const themeMatch = new Map<string, { book: Book; strength: number }>();
+  const lessThemes = lessBooks.map((book) => themes(book));
+  const negativeTheme = new Map<string, number>();
   for (const candidate of candidates) {
     const words = themes(candidate);
+    const negativeOverlap = Math.max(
+      0,
+      ...lessThemes.map(
+        (avoid) => [...words].filter((word) => avoid.has(word)).length,
+      ),
+    );
+    if (negativeOverlap >= 2)
+      negativeTheme.set(candidate.id, Math.min(9, negativeOverlap * 2.5));
     let strongest: { book: Book; strength: number } | undefined;
     for (const anchor of anchorThemes) {
       if (workKey(anchor.book) === workKey(candidate)) continue;
@@ -229,9 +252,11 @@ export async function recommendations(
       (a, b) =>
         b.score +
           (themeMatch.get(b.id)?.strength || 0) -
+          (negativeTheme.get(b.id) || 0) -
           (genreCounts.get(b.genre) || 0) * 0.5 -
           (a.score +
             (themeMatch.get(a.id)?.strength || 0) -
+            (negativeTheme.get(a.id) || 0) -
             (genreCounts.get(a.genre) || 0) * 0.5) ||
         a.title.localeCompare(b.title) ||
         a.id.localeCompare(b.id),
@@ -264,6 +289,12 @@ export async function recommendations(
       (picked) => picked.genre === book.genre,
     );
     const thematic = themeMatch.get(book.id);
+    const explicitMore = moreBooks.find(
+      (picked) =>
+        picked.genre === book.genre ||
+        identity(picked.author) === author ||
+        thematic?.book.id === picked.id,
+    );
     const reason =
       circle > 0
         ? `Rated highly by ${circle === 1 ? "a reader you follow" : "readers you follow"}`
@@ -271,20 +302,22 @@ export async function recommendations(
           ? `Loved by ${peers === 1 ? "a reader" : "readers"} with your taste`
           : favoriteAuthor
             ? `Because you loved ${favoriteAuthor.title}`
-            : thematic
-              ? `A story to try after ${thematic.book.title}`
-              : favoriteGenre
-                ? `In the world of ${favoriteGenre.genre.toLowerCase()} you love`
-                : preferred.has(book.genre)
-                  ? `Because you chose ${book.genre.toLowerCase()}`
-                  : authorAffinity > 0
-                    ? `More from ${book.author}`
-                    : genreAffinity > 0
-                      ? `Inspired by your interest in ${book.genre.toLowerCase()}`
-                      : community > 0
-                        ? "Rated highly in public community reviews"
-                        : starterReasons[book.id] ||
-                          "A story from the Shelves collection";
+            : explicitMore
+              ? `More like ${explicitMore.title}`
+              : thematic
+                ? `A story to try after ${thematic.book.title}`
+                : favoriteGenre
+                  ? `In the world of ${favoriteGenre.genre.toLowerCase()} you love`
+                  : preferred.has(book.genre)
+                    ? `Because you chose ${book.genre.toLowerCase()}`
+                    : authorAffinity > 0
+                      ? `More from ${book.author}`
+                      : genreAffinity > 0
+                        ? `Inspired by your interest in ${book.genre.toLowerCase()}`
+                        : community > 0
+                          ? "Rated highly in public community reviews"
+                          : starterReasons[book.id] ||
+                            "A story from the Shelves collection";
     result.push({ ...book, reason });
   }
   return result;

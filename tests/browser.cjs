@@ -1296,6 +1296,40 @@ const { auditLayout } = require("./layout.cjs");
         fullPage: true,
       });
     }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${base}/#discover`);
+    const moreLike = page.getByRole("button", { name: /^More like / }).first();
+    await moreLike.waitFor();
+    const repeated = await page.evaluate(() => {
+      const picks = new Set(
+        [
+          ...document.querySelectorAll(".discover-page .book-tile .book-open"),
+        ].map((link) => link.getAttribute("href")),
+      );
+      return [
+        ...document.querySelectorAll(".discover-page .explore-shelf-book"),
+      ]
+        .map((link) => link.getAttribute("href"))
+        .filter((href) => picks.has(href));
+    });
+    assert.deepEqual(
+      repeated,
+      [],
+      "The wider catalogue does not repeat ranked picks",
+    );
+    await page.screenshot({
+      path: "test-results/taste-discover-desktop.png",
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await auditLayout(page, "taste feedback 390px");
+    await page.screenshot({
+      path: "test-results/taste-discover-mobile.png",
+      fullPage: true,
+    });
+    await moreLike.click();
+    await page.getByText(/We'll look for more stories like/).waitFor();
+    await page.goto(`${base}/#settings`);
     await page.setViewportSize({ width: 320, height: 480 });
     await page
       .getByRole("button", { name: "Delete account", exact: true })

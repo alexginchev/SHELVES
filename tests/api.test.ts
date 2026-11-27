@@ -3067,6 +3067,105 @@ test("a story-level match outranks a generic genre match", async () => {
   }
 });
 
+test("recommendation feedback is private, validated, and changes future picks", async () => {
+  const db = await testDatabase();
+  const server = createApp(db).listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}/api`;
+  const request = (path: string, signal: string, cookie = "") =>
+    fetch(base + path, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shelves-Request": "1",
+        ...(cookie ? { cookie } : {}),
+      },
+      body: JSON.stringify({ signal }),
+    });
+  try {
+    const register = async (name: string) => {
+      const response = await fetch(base + "/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shelves-Request": "1",
+        },
+        body: JSON.stringify({
+          email: `${name}@example.test`,
+          username: name,
+          displayName: name,
+          password: "a-long-test-password",
+        }),
+      });
+      assert.equal(response.status, 201);
+      return {
+        user: (await response.json()).user as User,
+        cookie: response.headers.get("set-cookie")!.split(";")[0],
+      };
+    };
+    const first = await register("feedback_reader");
+    const second = await register("another_reader");
+    await db.run(
+      "INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?)",
+      "feedback-match",
+      "The Solitary Halls",
+      "A. Novelist",
+      "Fiction",
+      300,
+      "A solitary traveller wanders through endless halls in a strange house and questions everything she knows.",
+      null,
+      "sage",
+      2024,
+    );
+    const path = "/recommendations/seed-piranesi/feedback";
+    assert.equal((await request(path, "more")).status, 401);
+    assert.equal((await request(path, "unknown", first.cookie)).status, 400);
+    assert.equal((await request(path, "more", first.cookie)).status, 204);
+    assert.equal(
+      (
+        await db.get<{ signal: string }>(
+          "SELECT signal FROM recommendation_taste_feedback WHERE user_id=? AND book_id=?",
+          first.user.id,
+          "seed-piranesi",
+        )
+      )?.signal,
+      "more",
+    );
+    const firstPicks = await recommendations(db, first.user.id);
+    assert(!firstPicks.some((book) => book.id === "seed-piranesi"));
+    assert.equal(
+      firstPicks.find((book) => book.id === "feedback-match")?.reason,
+      "More like Piranesi",
+    );
+    assert(
+      (await recommendations(db, second.user.id)).some(
+        (book) => book.id === "seed-piranesi",
+      ),
+    );
+    assert.equal((await request(path, "less", first.cookie)).status, 204);
+    assert.equal(
+      (
+        await db.get<{ signal: string }>(
+          "SELECT signal FROM recommendation_taste_feedback WHERE user_id=? AND book_id=?",
+          first.user.id,
+          "seed-piranesi",
+        )
+      )?.signal,
+      "less",
+    );
+    assert(
+      !(await recommendations(db, first.user.id)).some(
+        (book) => book.id === "feedback-match",
+      ),
+    );
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await db.close();
+  }
+});
+
 test("feed cursors, filters and owned comment changes", async () => {
   const db = await testDatabase();
   const server = createApp(db).listen(0, "127.0.0.1");

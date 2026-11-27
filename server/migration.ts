@@ -11,6 +11,7 @@ export const dataTables = [
   "shelves",
   "shelf_books",
   "recommendation_feedback",
+  "recommendation_taste_feedback",
   "posts",
   "post_likes",
   "comments",

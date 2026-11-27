@@ -30,6 +30,7 @@ export async function openPostgres(schema = schemaName()): Promise<Store> {
         "shelves",
         "shelf_books",
         "recommendation_feedback",
+        "recommendation_taste_feedback",
         "posts",
         "post_likes",
         "comments",

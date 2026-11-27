@@ -677,10 +677,105 @@ body {
   border-bottom: 1px solid var(--line);
 }
 .book-tile .recommendation-reason {
-  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+.book-tile .recommendation-reason svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--coral);
 }
 .book-tile .dismiss-book {
   color: var(--ink-soft);
+}
+.recommendation-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 11px;
+}
+.recommendation-actions button {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: calc(50% - 3px);
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.recommendation-actions button:hover {
+  background: var(--paper-deep);
+  border-color: var(--sage);
+}
+.recommendation-actions button:active {
+  transform: scale(0.96);
+}
+.recommendation-actions button:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+.recommendation-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.recommendation-actions svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.home-discovery-pick {
+  display: grid;
+  align-content: start;
+  flex: 0 0 clamp(125px, 20%, 160px);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.home-discovery-pick .home-discovery-book {
+  flex: none;
+  width: 100%;
+}
+.home-discovery-pick .recommendation-actions {
+  justify-content: start;
+  gap: 8px;
+}
+.home-discovery-pick .recommendation-actions button {
+  flex: none;
+  max-width: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+}
+.home-discovery-pick .recommendation-actions span {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .recommendation-actions button {
+    transition: none;
+  }
 }
 .library-tabs {
   gap: 18px;

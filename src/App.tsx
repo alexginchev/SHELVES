@@ -26,7 +26,7 @@ import type {
   Stats,
   ReadingStatus,
 } from "../shared/types";
-import { api } from "./api";
+import { api, json } from "./api";
 import {
   Avatar,
   BookCard,
@@ -354,6 +354,14 @@ export function App() {
       setBusy(false);
     }
   }
+  const ratePick = (book: Book, signal: "more" | "less") =>
+    void mutate(
+      () =>
+        api(`/recommendations/${book.id}/feedback`, json("PUT", { signal })),
+      signal === "more"
+        ? `We'll look for more stories like ${book.title}.`
+        : `We'll show fewer stories like ${book.title}.`,
+    );
   const saved = async () => {
     await refresh();
     setNotice("Saved to your Shelves account.");
@@ -1020,6 +1028,8 @@ export function App() {
                         savedIds={data.library.map((record) => record.bookId)}
                         genre={data.recommendations[0]?.genre || "Fiction"}
                         onBook={openBookPage}
+                        onFeedback={ratePick}
+                        feedbackBusy={busy}
                         onPost={startPost}
                       />
                     ) : null}
@@ -1160,26 +1170,21 @@ export function App() {
                         book={b}
                         reason={"reason" in b ? String(b.reason) : undefined}
                         onOpen={openBookPage}
-                        onDismiss={
-                          query.trim().length < 2
-                            ? (b) =>
-                                void mutate(
-                                  () =>
-                                    api(`/recommendations/${b.id}/dismiss`, {
-                                      method: "PUT",
-                                    }),
-                                  "This pick is hidden from your recommendations.",
-                                )
-                            : undefined
+                        onFeedback={
+                          query.trim().length < 2 ? ratePick : undefined
                         }
+                        feedbackBusy={busy}
                       />
                     ))}
                   </div>
                   {query.trim().length < 2 ? (
                     <ExploreShelf
                       genre={data.recommendations[0]?.genre || "Fiction"}
-                      savedIds={data.library.map((record) => record.bookId)}
-                      fallback={data.recommendations.slice(0, 8)}
+                      savedIds={[
+                        ...data.library.map((record) => record.bookId),
+                        ...data.recommendations.map((book) => book.id),
+                      ]}
+                      fallback={[]}
                       onBook={openBookPage}
                     />
                   ) : null}

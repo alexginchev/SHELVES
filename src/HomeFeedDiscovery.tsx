@@ -1,5 +1,5 @@
 import type { Book, Reader, Recommendation } from "../shared/types";
-import { Avatar, Cover, Icon } from "./components";
+import { Avatar, Cover, Icon, RecommendationActions } from "./components";
 import { ExploreShelf } from "./LibraryShelves";
 import { ReaderName } from "./ShelvesBadge";
 
@@ -9,6 +9,8 @@ export function HomeFeedDiscovery({
   savedIds,
   genre,
   onBook,
+  onFeedback,
+  feedbackBusy,
   onPost,
 }: {
   recommendations: Recommendation[];
@@ -16,6 +18,8 @@ export function HomeFeedDiscovery({
   savedIds: string[];
   genre: string;
   onBook: (book: Book) => void;
+  onFeedback: (book: Book, signal: "more" | "less") => void;
+  feedbackBusy: boolean;
   onPost: () => void;
 }) {
   const nextPicks = recommendations.slice(3, 7);
@@ -49,31 +53,37 @@ export function HomeFeedDiscovery({
           </div>
           <div className="home-discovery-book-track">
             {nextPicks.map((book) => (
-              <a
-                key={book.id}
-                href={`#book/${book.id}`}
-                className="home-discovery-book"
-                aria-label={`Open ${book.title}`}
-                onClick={(event) => {
-                  if (
-                    event.button !== 0 ||
-                    event.ctrlKey ||
-                    event.metaKey ||
-                    event.shiftKey ||
-                    event.altKey
-                  )
-                    return;
-                  event.preventDefault();
-                  onBook(book);
-                }}
-              >
-                <Cover book={book} />
-                <span className="home-discovery-book-info">
-                  <strong>{book.title}</strong>
-                  <small>{book.author}</small>
-                  <em>{book.reason}</em>
-                </span>
-              </a>
+              <div className="home-discovery-pick" key={book.id}>
+                <a
+                  href={`#book/${book.id}`}
+                  className="home-discovery-book"
+                  aria-label={`Open ${book.title}`}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.ctrlKey ||
+                      event.metaKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    )
+                      return;
+                    event.preventDefault();
+                    onBook(book);
+                  }}
+                >
+                  <Cover book={book} />
+                  <span className="home-discovery-book-info">
+                    <strong>{book.title}</strong>
+                    <small>{book.author}</small>
+                    <em>{book.reason}</em>
+                  </span>
+                </a>
+                <RecommendationActions
+                  book={book}
+                  onFeedback={onFeedback}
+                  disabled={feedbackBusy}
+                />
+              </div>
             ))}
           </div>
         </section>

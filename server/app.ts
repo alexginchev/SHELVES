@@ -523,7 +523,7 @@ export function createApp(db: Store) {
         db,
         (res.locals.user as User | undefined)?.id,
       ),
-      algorithmVersion: "quality-relevance-v2",
+      algorithmVersion: "taste-feedback-v3",
     }),
   );
   app.put("/api/recommendations/:id/dismiss", async (req, res) => {
@@ -534,6 +534,29 @@ export function createApp(db: Store) {
       me.id,
       id(req),
     );
+    res.status(204).end();
+  });
+  app.put("/api/recommendations/:id/feedback", async (req, res) => {
+    const me = user(res);
+    const bookId = id(req);
+    const { signal } = z
+      .object({ signal: z.enum(["more", "less"]) })
+      .parse(req.body);
+    await bookById(db, bookId);
+    await db.transaction(async (tx) => {
+      await tx.run(
+        "INSERT INTO recommendation_taste_feedback (user_id,book_id,signal) VALUES (?,?,?) ON CONFLICT(user_id,book_id) DO UPDATE SET signal=excluded.signal",
+        me.id,
+        bookId,
+        signal,
+      );
+      // A rated pick leaves the current queue, including its other editions.
+      await tx.run(
+        "INSERT INTO recommendation_feedback VALUES (?,?) ON CONFLICT DO NOTHING",
+        me.id,
+        bookId,
+      );
+    });
     res.status(204).end();
   });
   app.get("/api/stats", async (_req, res) =>
